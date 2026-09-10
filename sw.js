@@ -1,5 +1,5 @@
-const CACHE='owned-library-v1.0';
-const CORE=['./','./index.html','./app-v10.html','./app.html','./patch-v08.js','./patch-v09.js','./patch-v10.js','./manifest.webmanifest','./icon.svg'];
+const CACHE='owned-library-v1.1';
+const CORE=['./','./index.html','./app-v11.html','./app.html','./patch-v08.js','./patch-v09.js','./patch-v10.js','./patch-v11.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./app-v10.html'))))});
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./app-v11.html'))))});
