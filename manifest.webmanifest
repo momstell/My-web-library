@@ -1,0 +1,29 @@
+{
+  "name": "내 소장도서관",
+  "short_name": "소장도서관",
+  "description": "리디, 시리즈, 카카오페이지, 미스터블루 웹툰·웹소설 통합 소장서재",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#171924",
+  "lang": "ko-KR",
+  "icons": [
+    {"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ],
+  "share_target": {
+    "action": "./",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "share_title",
+      "text": "share_text",
+      "url": "share_url"
+    }
+  },
+  "shortcuts": [
+    {"name":"작품 검색","short_name":"검색","url":"./?focus=search"},
+    {"name":"작품 직접 등록","short_name":"등록","url":"./?new=1"}
+  ]
+}
