@@ -267,8 +267,8 @@ public class MainActivity extends Activity {
                 br.close();
 
                 Pattern[] patterns = new Pattern[] {
-                        Pattern.compile("\\"title_id\\"\\s*:\\s*\\"(\\d+)\\""),
-                        Pattern.compile("\\"content_id\\"\\s*:\\s*\\"(\\d+)\\""),
+                        Pattern.compile("\\"title_id\\"\\\\s*:\\\\s*\\"(\\\\d+)\\""),
+                        Pattern.compile("\\"content_id\\"\\\\s*:\\\\s*\\"(\\\\d+)\\""),
                         Pattern.compile("title_no=([0-9]+)")
                 };
 
