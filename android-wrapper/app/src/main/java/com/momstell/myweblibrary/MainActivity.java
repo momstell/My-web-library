@@ -17,8 +17,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MainActivity extends Activity {
     private static final String LIBRARY_URL = "https://momstell.github.io/My-web-library/";
@@ -266,21 +264,57 @@ public class MainActivity extends Activity {
                 while ((line = br.readLine()) != null) html.append(line).append('\n');
                 br.close();
 
-                Pattern[] patterns = new Pattern[] {
-                        Pattern.compile("\\"title_id\\"\\\\s*:\\\\s*\\"(\\\\d+)\\""),
-                        Pattern.compile("\\"content_id\\"\\\\s*:\\\\s*\\"(\\\\d+)\\""),
-                        Pattern.compile("title_no=([0-9]+)")
-                };
+                String source = html.toString();
+                String id = findQuotedNumber(source, "title_id");
+                if (id != null) return id;
 
-                for (Pattern p : patterns) {
-                    Matcher m = p.matcher(html);
-                    if (m.find()) return m.group(1);
-                }
+                id = findQuotedNumber(source, "content_id");
+                if (id != null) return id;
+
+                return findNumberAfter(source, "title_no=");
             } catch (Exception ignored) {
+                return null;
             } finally {
                 if (c != null) c.disconnect();
             }
-            return null;
+        }
+
+        private String findQuotedNumber(String source, String key) {
+            String marker = """ + key + """;
+            int start = source.indexOf(marker);
+            if (start < 0) return null;
+
+            int colon = source.indexOf(':', start + marker.length());
+            if (colon < 0) return null;
+
+            int q1 = source.indexOf('"', colon + 1);
+            if (q1 < 0) return null;
+
+            int q2 = source.indexOf('"', q1 + 1);
+            if (q2 < 0) return null;
+
+            String value = source.substring(q1 + 1, q2).trim();
+            return isDigits(value) ? value : null;
+        }
+
+        private String findNumberAfter(String source, String marker) {
+            int start = source.indexOf(marker);
+            if (start < 0) return null;
+            start += marker.length();
+
+            int end = start;
+            while (end < source.length() && Character.isDigit(source.charAt(end))) end++;
+            if (end <= start) return null;
+
+            return source.substring(start, end);
+        }
+
+        private boolean isDigits(String value) {
+            if (value == null || value.isEmpty()) return false;
+            for (int i = 0; i < value.length(); i++) {
+                if (!Character.isDigit(value.charAt(i))) return false;
+            }
+            return true;
         }
     }
 }
