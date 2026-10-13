@@ -280,7 +280,7 @@ public class MainActivity extends Activity {
         }
 
         private String findQuotedNumber(String source, String key) {
-            String marker = """ + key + """;
+            String marker = String.valueOf((char)34) + key + String.valueOf((char)34);
             int start = source.indexOf(marker);
             if (start < 0) return null;
 
