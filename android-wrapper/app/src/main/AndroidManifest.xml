@@ -5,8 +5,11 @@
     <queries>
         <package android:name="com.initialcoms.ridi" />
         <package android:name="com.nhn.android.nbooks" />
+        <package android:name="com.nhn.android.nbooks.full" />
         <package android:name="com.kakao.page" />
         <package android:name="com.mrblue.mrblue" />
+        <package android:name="com.mrblue.onestore_completion" />
+        <package android:name="com.mrblue.mrblue_completion" />
     </queries>
 
     <application
