@@ -11,6 +11,7 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -87,8 +88,17 @@ public class MainActivity extends Activity {
                 new Thread(() -> {
                     String resolved = followRedirects(u);
                     String canonical = normalizeSeriesUrl(resolved);
-                    String contentId = findSeriesContentId(canonical);
+                    String contentId = findSeriesContentIdWithFallback(canonical);
                     activity.runOnUiThread(() -> openSeries(canonical, contentId));
+                }).start();
+                return;
+            }
+
+            if (p.contains("미스터블루") || low.contains("mrblue")) {
+                new Thread(() -> {
+                    String resolved = followRedirects(u);
+                    String target = normalizeMrBlueUrl(resolved);
+                    activity.runOnUiThread(() -> openMrBlue(target));
                 }).start();
                 return;
             }
@@ -99,11 +109,6 @@ public class MainActivity extends Activity {
         private void openPlatformNow(String platform, String url) {
             String low = url == null ? "" : url.toLowerCase(Locale.ROOT);
             Uri uri = safeUri(url);
-
-            if (platform.contains("미스터블루") || low.contains("mrblue")) {
-                openMrBlue(uri);
-                return;
-            }
 
             String pkg = null;
             if (platform.contains("리디") || low.contains("ridi")) pkg = RIDI_PACKAGE;
@@ -125,13 +130,17 @@ public class MainActivity extends Activity {
         private void openSeries(String resolvedUrl, String contentId) {
             String pkg = firstInstalled(SERIES_PACKAGE, SERIES_FULL_PACKAGE);
             if (pkg == null) {
+                toast("시리즈 앱을 찾지 못했습니다");
                 openPlayStore(SERIES_PACKAGE);
                 return;
             }
 
             if (contentId != null && !contentId.isEmpty()) {
+                toast("시리즈 작품 ID " + contentId);
                 Uri deep = Uri.parse("naverbooks://titleEnd?contentId=" + Uri.encode(contentId));
                 if (tryOpenUriInPackage(deep, pkg)) return;
+            } else {
+                toast("시리즈 작품 ID를 못 찾음 → 앱 홈");
             }
 
             Uri original = safeUri(resolvedUrl);
@@ -139,17 +148,31 @@ public class MainActivity extends Activity {
             launchPackage(pkg);
         }
 
-        private void openMrBlue(Uri uri) {
-            // 미스터블루 자체 테스트 링크 형식:
-            // mrblue://act=goPage&url=https://m.mrblue.com/...작품경로
-            if (uri != null) {
+        private void openMrBlue(String targetUrl) {
+            if (targetUrl != null && !targetUrl.isEmpty()) {
+                String noScheme = targetUrl
+                        .replaceFirst("^https://", "")
+                        .replaceFirst("^http://", "");
+
+                String deepText = "mrblue://act=goPage&url=" + noScheme;
+                toast("미블 작품링크 시도");
                 try {
-                    String target = normalizeMrBlueUrl(uri.toString());
-                    Uri deep = Uri.parse("mrblue://act=goPage&url=" + Uri.encode(target, ":/?=&"));
-                    Intent i = new Intent(Intent.ACTION_VIEW, deep);
+                    Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(deepText));
                     i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    activity.startActivity(i);
-                    return;
+                    if (i.resolveActivity(pm) != null) {
+                        activity.startActivity(i);
+                        return;
+                    }
+                } catch (Exception ignored) {}
+
+                String deepTextHttps = "mrblue://act=goPage&url=" + targetUrl;
+                try {
+                    Intent i2 = new Intent(Intent.ACTION_VIEW, Uri.parse(deepTextHttps));
+                    i2.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    if (i2.resolveActivity(pm) != null) {
+                        activity.startActivity(i2);
+                        return;
+                    }
                 } catch (Exception ignored) {}
             }
 
@@ -158,7 +181,10 @@ public class MainActivity extends Activity {
                     MRBLUE_PLUS_PACKAGE,
                     MRBLUE_PLAY_PACKAGE
             );
-            if (pkg != null && launchPackage(pkg)) return;
+            if (pkg != null && launchPackage(pkg)) {
+                toast("미블 딥링크 실패 → 앱 홈");
+                return;
+            }
 
             try {
                 activity.startActivity(new Intent(
@@ -230,15 +256,16 @@ public class MainActivity extends Activity {
             if (raw == null || raw.trim().isEmpty()) return raw;
             String current = raw.trim();
 
-            for (int n = 0; n < 6; n++) {
+            for (int n = 0; n < 8; n++) {
                 HttpURLConnection c = null;
                 try {
                     URL u = new URL(current);
                     c = (HttpURLConnection) u.openConnection();
                     c.setInstanceFollowRedirects(false);
-                    c.setConnectTimeout(3500);
-                    c.setReadTimeout(3500);
-                    c.setRequestProperty("User-Agent", "Mozilla/5.0 Android MyWebLibrary/3.1");
+                    c.setConnectTimeout(4500);
+                    c.setReadTimeout(4500);
+                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/3.3");
+                    c.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en;q=0.8");
 
                     int code = c.getResponseCode();
                     if (code >= 300 && code < 400) {
@@ -260,8 +287,9 @@ public class MainActivity extends Activity {
         private String normalizeSeriesUrl(String raw) {
             if (raw == null) return "";
             String out = raw.trim();
-            out = out.replace("https://m.series.naver.com/", "https://series.naver.com/");
             out = out.replace("http://m.series.naver.com/", "https://series.naver.com/");
+            out = out.replace("https://m.series.naver.com/", "https://series.naver.com/");
+            out = out.replace("http://series.naver.com/", "https://series.naver.com/");
             return out;
         }
 
@@ -274,31 +302,65 @@ public class MainActivity extends Activity {
             return out;
         }
 
+        private String findSeriesContentIdWithFallback(String canonicalUrl) {
+            String id = findSeriesContentId(canonicalUrl);
+            if (id != null) return id;
+
+            String mobile = canonicalUrl.replace("https://series.naver.com/", "https://m.series.naver.com/");
+            id = findSeriesContentId(mobile);
+            if (id != null) return id;
+
+            String productNo = findNumberAfter(canonicalUrl, "productNo=");
+            if (productNo != null) {
+                String[] kinds = new String[] {"novel", "comic", "ebook"};
+                for (String kind : kinds) {
+                    String alt = "https://series.naver.com/" + kind + "/detail.series?productNo=" + productNo;
+                    id = findSeriesContentId(alt);
+                    if (id != null) return id;
+                }
+            }
+            return null;
+        }
+
         private String findSeriesContentId(String pageUrl) {
+            String source = fetchHtml(pageUrl);
+            if (source == null || source.isEmpty()) return null;
+
+            String[] keys = new String[] {
+                    "content_id",
+                    "title_id",
+                    "contentId",
+                    "titleId",
+                    "title_no=",
+                    "titleNo="
+            };
+
+            for (String key : keys) {
+                String value = findDigitsNearKey(source, key);
+                if (value != null) return value;
+            }
+            return null;
+        }
+
+        private String fetchHtml(String pageUrl) {
             if (pageUrl == null || pageUrl.isEmpty()) return null;
             HttpURLConnection c = null;
 
             try {
                 URL u = new URL(pageUrl);
                 c = (HttpURLConnection) u.openConnection();
-                c.setConnectTimeout(5000);
-                c.setReadTimeout(5000);
-                c.setRequestProperty("User-Agent", "Mozilla/5.0 Android MyWebLibrary/3.1");
+                c.setConnectTimeout(5500);
+                c.setReadTimeout(5500);
+                c.setInstanceFollowRedirects(true);
+                c.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36");
+                c.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en;q=0.8");
 
                 BufferedReader br = new BufferedReader(new InputStreamReader(c.getInputStream()));
                 StringBuilder html = new StringBuilder();
                 String line;
                 while ((line = br.readLine()) != null) html.append(line).append('\n');
                 br.close();
-
-                String source = html.toString();
-                String id = findQuotedNumber(source, "title_id");
-                if (id != null) return id;
-
-                id = findQuotedNumber(source, "content_id");
-                if (id != null) return id;
-
-                return findNumberAfter(source, "title_no=");
+                return html.toString();
             } catch (Exception ignored) {
                 return null;
             } finally {
@@ -306,22 +368,25 @@ public class MainActivity extends Activity {
             }
         }
 
-        private String findQuotedNumber(String source, String key) {
-            String marker = String.valueOf((char)34) + key + String.valueOf((char)34);
-            int start = source.indexOf(marker);
-            if (start < 0) return null;
+        private String findDigitsNearKey(String source, String key) {
+            int from = 0;
+            while (from < source.length()) {
+                int start = source.indexOf(key, from);
+                if (start < 0) return null;
 
-            int colon = source.indexOf(':', start + marker.length());
-            if (colon < 0) return null;
+                int limit = Math.min(source.length(), start + key.length() + 140);
+                int p = start + key.length();
 
-            int q1 = source.indexOf('"', colon + 1);
-            if (q1 < 0) return null;
-
-            int q2 = source.indexOf('"', q1 + 1);
-            if (q2 < 0) return null;
-
-            String value = source.substring(q1 + 1, q2).trim();
-            return isDigits(value) ? value : null;
+                while (p < limit && !Character.isDigit(source.charAt(p))) p++;
+                if (p < limit) {
+                    int end = p;
+                    while (end < limit && Character.isDigit(source.charAt(end))) end++;
+                    String value = source.substring(p, end);
+                    if (value.length() >= 3 && value.length() <= 12) return value;
+                }
+                from = start + key.length();
+            }
+            return null;
         }
 
         private String findNumberAfter(String source, String marker) {
@@ -336,12 +401,8 @@ public class MainActivity extends Activity {
             return source.substring(start, end);
         }
 
-        private boolean isDigits(String value) {
-            if (value == null || value.isEmpty()) return false;
-            for (int i = 0; i < value.length(); i++) {
-                if (!Character.isDigit(value.charAt(i))) return false;
-            }
-            return true;
+        private void toast(String message) {
+            Toast.makeText(activity, message, Toast.LENGTH_SHORT).show();
         }
     }
 }
