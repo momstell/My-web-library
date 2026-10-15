@@ -86,8 +86,9 @@ public class MainActivity extends Activity {
             if (p.contains("시리즈") || low.contains("series.naver") || low.contains("naver.me")) {
                 new Thread(() -> {
                     String resolved = followRedirects(u);
-                    String contentId = findSeriesContentId(resolved);
-                    activity.runOnUiThread(() -> openSeries(resolved, contentId));
+                    String canonical = normalizeSeriesUrl(resolved);
+                    String contentId = findSeriesContentId(canonical);
+                    activity.runOnUiThread(() -> openSeries(canonical, contentId));
                 }).start();
                 return;
             }
@@ -139,16 +140,25 @@ public class MainActivity extends Activity {
         }
 
         private void openMrBlue(Uri uri) {
+            // 미스터블루 자체 테스트 링크 형식:
+            // mrblue://act=goPage&url=https://m.mrblue.com/...작품경로
+            if (uri != null) {
+                try {
+                    String target = normalizeMrBlueUrl(uri.toString());
+                    Uri deep = Uri.parse("mrblue://act=goPage&url=" + Uri.encode(target, ":/?=&"));
+                    Intent i = new Intent(Intent.ACTION_VIEW, deep);
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    activity.startActivity(i);
+                    return;
+                } catch (Exception ignored) {}
+            }
+
             String pkg = firstInstalled(
                     MRBLUE_ONESTORE_PACKAGE,
                     MRBLUE_PLUS_PACKAGE,
                     MRBLUE_PLAY_PACKAGE
             );
-
-            if (pkg != null) {
-                if (tryOpenUriInPackage(uri, pkg)) return;
-                if (launchPackage(pkg)) return;
-            }
+            if (pkg != null && launchPackage(pkg)) return;
 
             try {
                 activity.startActivity(new Intent(
@@ -245,6 +255,23 @@ public class MainActivity extends Activity {
                 }
             }
             return current;
+        }
+
+        private String normalizeSeriesUrl(String raw) {
+            if (raw == null) return "";
+            String out = raw.trim();
+            out = out.replace("https://m.series.naver.com/", "https://series.naver.com/");
+            out = out.replace("http://m.series.naver.com/", "https://series.naver.com/");
+            return out;
+        }
+
+        private String normalizeMrBlueUrl(String raw) {
+            if (raw == null) return "";
+            String out = raw.trim();
+            out = out.replace("https://www.mrblue.com/", "https://m.mrblue.com/");
+            out = out.replace("http://www.mrblue.com/", "https://m.mrblue.com/");
+            out = out.replace("http://m.mrblue.com/", "https://m.mrblue.com/");
+            return out;
         }
 
         private String findSeriesContentId(String pageUrl) {
