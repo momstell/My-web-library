@@ -126,7 +126,54 @@ public class MainActivity extends Activity {
             }
         });
 
-        webView.loadUrl(LIBRARY_URL);
+        webView.loadUrl(libraryUrlForIntent(getIntent()));
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (webView != null) {
+            webView.loadUrl(libraryUrlForIntent(intent));
+        }
+    }
+
+    private String libraryUrlForIntent(Intent intent) {
+        if (intent == null || !Intent.ACTION_SEND.equals(intent.getAction())) {
+            return LIBRARY_URL;
+        }
+
+        String type = intent.getType();
+        if (type == null || !type.startsWith("text/")) {
+            return LIBRARY_URL;
+        }
+
+        CharSequence titleCs = intent.getCharSequenceExtra(Intent.EXTRA_SUBJECT);
+        if (titleCs == null || titleCs.length() == 0) {
+            try {
+                titleCs = intent.getCharSequenceExtra(Intent.EXTRA_TITLE);
+            } catch (Exception ignored) {}
+        }
+        CharSequence textCs = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
+
+        String title = titleCs == null ? "" : titleCs.toString().trim();
+        String text = textCs == null ? "" : textCs.toString().trim();
+        String url = firstHttpUrl(text);
+
+        Uri.Builder b = Uri.parse(LIBRARY_URL).buildUpon();
+        if (!title.isEmpty()) b.appendQueryParameter("share_title", title);
+        if (!text.isEmpty()) b.appendQueryParameter("share_text", text);
+        if (!url.isEmpty()) b.appendQueryParameter("share_url", url);
+        return b.build().toString();
+    }
+
+    private String firstHttpUrl(String text) {
+        if (text == null || text.isEmpty()) return "";
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("https?://[^\\s<>\\\"']+", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(text);
+        if (!m.find()) return "";
+        return m.group().replaceAll("[),.\\]]+$", "");
     }
 
     @Override
@@ -339,7 +386,7 @@ public class MainActivity extends Activity {
                 c.setReadTimeout(10000);
                 c.setRequestMethod("GET");
                 c.setRequestProperty("Accept", "application/json");
-                c.setRequestProperty("User-Agent", "MyWebLibrary/4.4 Android");
+                c.setRequestProperty("User-Agent", "MyWebLibrary/4.5 Android");
 
                 int status = c.getResponseCode();
                 BufferedReader br = new BufferedReader(new InputStreamReader(
@@ -766,7 +813,7 @@ public class MainActivity extends Activity {
                     c.setInstanceFollowRedirects(false);
                     c.setConnectTimeout(4500);
                     c.setReadTimeout(4500);
-                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.4");
+                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.5");
                     c.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en;q=0.8");
 
                     int code = c.getResponseCode();
