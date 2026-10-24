@@ -139,6 +139,25 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void openPlatformV2(String platform, String url, String title) {
+            String p = platform == null ? "" : platform;
+            String u = url == null ? "" : url;
+            String t = title == null ? "" : title;
+            String low = u.toLowerCase(Locale.ROOT);
+
+            if (p.contains("시리즈") || low.contains("series.naver") || low.contains("naver.me") || low.contains("nid.naver.com")) {
+                if (!claimSeriesRequest()) return;
+                new Thread(() -> {
+                    SeriesResolveResult result = resolveSeriesOnServer(u, t);
+                    activity.runOnUiThread(() -> openSeriesResolved(result, u));
+                }).start();
+                return;
+            }
+
+            openPlatform(p, u);
+        }
+
+        @JavascriptInterface
         public void openPlatform(String platform, String url) {
             String p = platform == null ? "" : platform;
             String u = url == null ? "" : url;
@@ -282,18 +301,23 @@ public class MainActivity extends Activity {
         }
 
         private SeriesResolveResult resolveSeriesOnServer(String rawUrl) {
+            return resolveSeriesOnServer(rawUrl, "");
+        }
+
+        private SeriesResolveResult resolveSeriesOnServer(String rawUrl, String title) {
             SeriesResolveResult out = new SeriesResolveResult();
             HttpURLConnection c = null;
 
             try {
                 String encoded = URLEncoder.encode(rawUrl, "UTF-8");
-                URL url = new URL("https://ncbdmzuwhphdstxcahxk.supabase.co/functions/v1/series-resolver?url=" + encoded);
+                String encodedTitle = URLEncoder.encode(title == null ? "" : title, "UTF-8");
+                URL url = new URL("https://ncbdmzuwhphdstxcahxk.supabase.co/functions/v1/series-resolver?url=" + encoded + "&title=" + encodedTitle);
                 c = (HttpURLConnection) url.openConnection();
                 c.setConnectTimeout(7000);
                 c.setReadTimeout(10000);
                 c.setRequestMethod("GET");
                 c.setRequestProperty("Accept", "application/json");
-                c.setRequestProperty("User-Agent", "MyWebLibrary/4.0 Android");
+                c.setRequestProperty("User-Agent", "MyWebLibrary/4.1 Android");
 
                 int status = c.getResponseCode();
                 BufferedReader br = new BufferedReader(new InputStreamReader(
@@ -395,7 +419,7 @@ public class MainActivity extends Activity {
                     c.setInstanceFollowRedirects(false);
                     c.setConnectTimeout(4500);
                     c.setReadTimeout(4500);
-                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.0");
+                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.1");
                     c.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en;q=0.8");
 
                     int code = c.getResponseCode();
