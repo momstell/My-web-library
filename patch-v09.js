@@ -1,4 +1,11 @@
 (() => {
+  function badCover09(v=''){
+    const s=String(v||'').toLowerCase();
+    return !s || /naver.*login|login.*naver|nid\.naver|로그인/.test(s);
+  }
+  function badTitle09(v=''){
+    return !v || /NAVER\s*로그인|네이버\s*로그인|NAVER\s*시리즈|네이버\s*시리즈/i.test(String(v));
+  }
   function badAuthor09(v=''){
     const a=String(v||'').replace(/\s+/g,' ').trim();
     if(!a) return true;
@@ -108,9 +115,10 @@
       const cv=String(d.cover||'').trim();
       const cu=norm(d.canonicalUrl||u);
 
-      if(mt&&mt.length>1&&!/^(NAVER\s*시리즈|미스터블루|카카오페이지|리디)$/i.test(mt)) b.title=mt;
+      if(mt&&mt.length>1&&!/^(NAVER\s*시리즈|네이버\s*로그인|NAVER\s*로그인|미스터블루|카카오페이지|리디)$/i.test(mt)
+          && (badTitle09(b.title)||!b.title||b.title.startsWith('제목 확인 필요'))) b.title=mt;
       if(au&&(!b.author||badAuthor09(b.author))) b.author=au;
-      if(cv&&(!b.cover||String(b.cover).startsWith('data:image/'))) b.cover=cv;
+      if(cv&&badCover09(b.cover)) b.cover=cv;
       if(cu)b.canonicalUrl=cu;
       b.sourceUrl=b.sourceUrl||u;
 
@@ -147,9 +155,10 @@
           .replace(/\s*[-|·:]\s*(?:RIDI|리디|카카오페이지|미스터블루).*$/i,'')
           .replace(/\s+(?:NAVER\s*시리즈|네이버\s*시리즈|시리즈|RIDI|리디|카카오페이지|미스터블루)\s*$/i,'').trim();
 
-        if(mt&&mt.length>1&&!/^(NAVER\s*시리즈|미스터블루|카카오페이지|리디)$/i.test(mt) && (!b.title||b.title.startsWith('제목 확인 필요'))) b.title=mt;
+        if(mt&&mt.length>1&&!/^(NAVER\s*시리즈|네이버\s*로그인|NAVER\s*로그인|미스터블루|카카오페이지|리디)$/i.test(mt)
+            && (badTitle09(b.title)||!b.title||b.title.startsWith('제목 확인 필요'))) b.title=mt;
         if(a && (!b.author||badAuthor09(b.author))) b.author=a;
-        if(d.image?.url&&!b.cover)b.cover=d.image.url;
+        if(d.image?.url&&badCover09(b.cover)) b.cover=d.image.url;
         if(cu)b.canonicalUrl=b.canonicalUrl||cu;
       }catch{}
     }
@@ -187,12 +196,12 @@
   },900);
 
   // 기존 서재도 이번 버전에서 한 번만, 누락된 작품만 천천히 자동 보강합니다.
-  const BACKFILL_KEY='mwl_meta_backfill_v27';
+  const BACKFILL_KEY='mwl_meta_backfill_v30';
   if(!localStorage.getItem(BACKFILL_KEY)){
     localStorage.setItem(BACKFILL_KEY,'started');
     const pending=books.filter(b=>
-      !b.author || badAuthor09(b.author) || !b.cover ||
-      !b.title || String(b.title).startsWith('제목 확인 필요')
+      !b.author || badAuthor09(b.author) || badCover09(b.cover) ||
+      badTitle09(b.title) || String(b.title).startsWith('제목 확인 필요')
     );
     (async()=>{
       for(const b of pending){
