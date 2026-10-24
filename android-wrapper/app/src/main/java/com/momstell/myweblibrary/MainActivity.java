@@ -234,14 +234,21 @@ public class MainActivity extends Activity {
 
             if (result != null && result.ok && result.deepLink != null && !result.deepLink.isEmpty()) {
                 toast("시리즈 작품 연결 · " + result.via);
-                if (tryOpenUriInPackage(Uri.parse(result.deepLink), pkg)) return;
+                if (forceOpenUriInPackage(Uri.parse(result.deepLink), pkg)) return;
             }
 
+            // 로그인/연령확인 보호작품은 서버에서 contentId를 읽지 못할 수 있습니다.
+            // 이 경우 PC URL이나 nid 로그인 래퍼 대신 실제 모바일 작품 URL을 시리즈 앱에 직접 전달합니다.
             String fallbackUrl = result != null && result.canonical != null && !result.canonical.isEmpty()
                     ? result.canonical : originalUrl;
-            toast("시리즈 내부 ID 확인 실패 → 앱 홈");
-            Uri original = safeUri(fallbackUrl);
-            if (tryOpenUriInPackage(original, pkg)) return;
+            String mobileUrl = toSeriesMobileUrl(fallbackUrl, result != null ? result.productNo : null);
+
+            if (mobileUrl != null && !mobileUrl.isEmpty()) {
+                toast("시리즈 보호작품 · 모바일 작품주소 직접 연결");
+                if (forceOpenUriInPackage(Uri.parse(mobileUrl), pkg)) return;
+            }
+
+            toast("시리즈 작품 연결 실패 → 앱 홈");
             launchPackage(pkg);
         }
 
@@ -298,6 +305,7 @@ public class MainActivity extends Activity {
             String contentId;
             String via;
             String error;
+            String productNo;
         }
 
         private SeriesResolveResult resolveSeriesOnServer(String rawUrl) {
@@ -317,7 +325,7 @@ public class MainActivity extends Activity {
                 c.setReadTimeout(10000);
                 c.setRequestMethod("GET");
                 c.setRequestProperty("Accept", "application/json");
-                c.setRequestProperty("User-Agent", "MyWebLibrary/4.1 Android");
+                c.setRequestProperty("User-Agent", "MyWebLibrary/4.2 Android");
 
                 int status = c.getResponseCode();
                 BufferedReader br = new BufferedReader(new InputStreamReader(
@@ -335,6 +343,7 @@ public class MainActivity extends Activity {
                 out.contentId = j.optString("contentId", "");
                 out.via = j.optString("via", "");
                 out.error = j.optString("error", "");
+                out.productNo = j.optString("productNo", "");
 
                 if (!out.ok && (out.error == null || out.error.isEmpty())) {
                     out.error = "resolver status " + status;
@@ -357,6 +366,55 @@ public class MainActivity extends Activity {
                 } catch (Exception ignored) {}
             }
             return null;
+        }
+
+        private String toSeriesMobileUrl(String raw, String productNo) {
+            String candidate = raw == null ? "" : raw.trim();
+
+            try {
+                Uri u = Uri.parse(candidate);
+                String host = u.getHost();
+                if ("nid.naver.com".equalsIgnoreCase(host)) {
+                    String inner = u.getQueryParameter("url");
+                    if (inner != null && !inner.isEmpty()) candidate = inner;
+                }
+            } catch (Exception ignored) {}
+
+            for (int i = 0; i < 3; i++) {
+                try {
+                    String decoded = Uri.decode(candidate);
+                    if (decoded.equals(candidate)) break;
+                    candidate = decoded;
+                } catch (Exception e) {
+                    break;
+                }
+            }
+
+            if (candidate.contains("series.naver.com")) {
+                candidate = candidate
+                        .replace("http://series.naver.com/", "https://m.series.naver.com/")
+                        .replace("https://series.naver.com/", "https://m.series.naver.com/")
+                        .replace("http://m.series.naver.com/", "https://m.series.naver.com/");
+                return candidate;
+            }
+
+            if (productNo != null && productNo.matches("\\d+")) {
+                return "https://m.series.naver.com/novel/detail.series?productNo=" + productNo;
+            }
+            return candidate;
+        }
+
+        private boolean forceOpenUriInPackage(Uri uri, String pkg) {
+            if (uri == null || pkg == null) return false;
+            try {
+                Intent i = new Intent(Intent.ACTION_VIEW, uri);
+                i.setPackage(pkg);
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                activity.startActivity(i);
+                return true;
+            } catch (Exception ignored) {
+                return false;
+            }
         }
 
         private boolean tryOpenUriInPackage(Uri uri, String pkg) {
@@ -419,7 +477,7 @@ public class MainActivity extends Activity {
                     c.setInstanceFollowRedirects(false);
                     c.setConnectTimeout(4500);
                     c.setReadTimeout(4500);
-                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.1");
+                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.2");
                     c.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en;q=0.8");
 
                     int code = c.getResponseCode();
