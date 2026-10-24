@@ -2,6 +2,7 @@ package com.momstell.myweblibrary;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -16,6 +17,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -334,7 +339,7 @@ public class MainActivity extends Activity {
                 c.setReadTimeout(10000);
                 c.setRequestMethod("GET");
                 c.setRequestProperty("Accept", "application/json");
-                c.setRequestProperty("User-Agent", "MyWebLibrary/4.3 Android");
+                c.setRequestProperty("User-Agent", "MyWebLibrary/4.4 Android");
 
                 int status = c.getResponseCode();
                 BufferedReader br = new BufferedReader(new InputStreamReader(
@@ -427,31 +432,85 @@ public class MainActivity extends Activity {
             ws.setJavaScriptEnabled(true);
             ws.setDomStorageEnabled(true);
             ws.setDatabaseEnabled(true);
+            ws.setSupportMultipleWindows(false);
+            ws.setJavaScriptCanOpenWindowsAutomatically(false);
+
+            auth.setFocusable(true);
+            auth.setFocusableInTouchMode(true);
+            auth.setOnTouchListener((v, event) -> {
+                if (!v.hasFocus()) v.requestFocus(View.FOCUS_DOWN);
+                return false;
+            });
 
             CookieManager cm = CookieManager.getInstance();
             cm.setAcceptCookie(true);
             cm.setAcceptThirdPartyCookies(auth, true);
 
-            final AlertDialog[] holder = new AlertDialog[1];
+            final Dialog dialog = new Dialog(
+                    activity,
+                    android.R.style.Theme_DeviceDefault_Light_NoActionBar_Fullscreen
+            );
 
             auth.setWebViewClient(new WebViewClient() {
                 private boolean resolving = false;
                 private long lastAttemptAt = 0L;
 
+                private boolean handleExternalScheme(WebView view, String rawUrl) {
+                    if (rawUrl == null || rawUrl.isEmpty()) return false;
+                    String low = rawUrl.toLowerCase(Locale.ROOT);
+                    if (low.startsWith("http://") || low.startsWith("https://")) return false;
+
+                    try {
+                        if (low.startsWith("intent://")) {
+                            Intent intent = Intent.parseUri(rawUrl, Intent.URI_INTENT_SCHEME);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            try {
+                                activity.startActivity(intent);
+                                return true;
+                            } catch (Exception e) {
+                                String fallback = intent.getStringExtra("browser_fallback_url");
+                                if (fallback != null && !fallback.isEmpty()) {
+                                    view.loadUrl(fallback);
+                                    return true;
+                                }
+                            }
+                        } else {
+                            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(rawUrl));
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            activity.startActivity(intent);
+                            return true;
+                        }
+                    } catch (Exception ignored) {
+                    }
+
+                    toast("네이버 앱 호출을 열지 못했어요 · 아이디 로그인으로 진행해 주세요");
+                    return true;
+                }
+
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                    return false;
+                    Uri uri = request.getUrl();
+                    return handleExternalScheme(view, uri == null ? "" : uri.toString());
                 }
 
                 @Override
                 @SuppressWarnings("deprecation")
                 public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                    return false;
+                    return handleExternalScheme(view, url);
                 }
 
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     super.onPageFinished(view, url);
+
+                    // 로그인 입력란이 터치되면 WebView가 IME 포커스를 확실히 잡도록 합니다.
+                    view.evaluateJavascript(
+                            "(function(){var es=document.querySelectorAll('input');" +
+                            "for(var i=0;i<es.length;i++){es[i].addEventListener('focus',function(){" +
+                            "if(window.getSelection){window.getSelection().removeAllRanges();}" +
+                            "});}})();",
+                            null
+                    );
 
                     long now = SystemClock.elapsedRealtime();
                     if (resolving || now - lastAttemptAt < 1500L) return;
@@ -467,7 +526,7 @@ public class MainActivity extends Activity {
                         activity.runOnUiThread(() -> {
                             if (id != null) {
                                 saveSeriesContentId(productNo, id);
-                                if (holder[0] != null && holder[0].isShowing()) holder[0].dismiss();
+                                if (dialog.isShowing()) dialog.dismiss();
                                 auth.destroy();
                                 toast("시리즈 보호작품 연동 완료");
                                 forceOpenUriInPackage(
@@ -480,22 +539,38 @@ public class MainActivity extends Activity {
                 }
             });
 
-            String target = "https://m.series.naver.com/novel/detail.series?productNo=" + productNo;
-            AlertDialog dialog = new AlertDialog.Builder(activity)
-                    .setTitle("시리즈 보호작품 1회 연동")
-                    .setMessage("네이버 페이지에서 로그인/연령확인을 완료하면 자동으로 작품 ID를 연결합니다. 로그인 정보는 이 기기 안에서만 사용됩니다.")
-                    .setView(auth)
-                    .setNegativeButton("취소", (d, which) -> auth.destroy())
-                    .create();
-            holder[0] = dialog;
+            dialog.setContentView(
+                    auth,
+                    new ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+            );
             dialog.setOnDismissListener(d -> {
                 try {
-                    if (auth.getParent() != null) {
-                        auth.stopLoading();
-                    }
+                    auth.stopLoading();
+                    auth.clearFocus();
                 } catch (Exception ignored) {}
             });
+
             dialog.show();
+
+            Window window = dialog.getWindow();
+            if (window != null) {
+                window.setLayout(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                );
+                window.setSoftInputMode(
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                                | WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
+                );
+            }
+
+            auth.requestFocus(View.FOCUS_DOWN);
+            toast("시리즈 보호작품 1회 연동 · 로그인 후 자동 연결");
+
+            String target = "https://m.series.naver.com/novel/detail.series?productNo=" + productNo;
             auth.loadUrl(target);
         }
 
@@ -691,7 +766,7 @@ public class MainActivity extends Activity {
                     c.setInstanceFollowRedirects(false);
                     c.setConnectTimeout(4500);
                     c.setReadTimeout(4500);
-                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.3");
+                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.4");
                     c.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en;q=0.8");
 
                     int code = c.getResponseCode();
