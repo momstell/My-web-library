@@ -16,7 +16,13 @@
     e.preventDefault();
     e.stopPropagation();
     try{
-      window.AndroidBridge.openPlatform(platformFromLink(a), a.href||'');
+      const nativeUrl=(a.dataset&&a.dataset.nativeUrl)||a.href||'';
+      const title=(a.dataset&&a.dataset.bookTitle)||(a.closest('.card')?.querySelector('.ttl')?.textContent||'').trim();
+      if(typeof window.AndroidBridge.openPlatformV2==='function'){
+        window.AndroidBridge.openPlatformV2(platformFromLink(a), nativeUrl, title);
+      }else{
+        window.AndroidBridge.openPlatform(platformFromLink(a), nativeUrl);
+      }
     }catch(err){
       location.href=a.href;
     }
