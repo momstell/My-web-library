@@ -142,11 +142,10 @@ public class MainActivity extends Activity {
             String u = url == null ? "" : url;
             String low = u.toLowerCase(Locale.ROOT);
 
-            if (p.contains("시리즈") || low.contains("series.naver") || low.contains("naver.me")) {
+            if (p.contains("시리즈") || low.contains("series.naver") || low.contains("naver.me") || low.contains("nid.naver.com")) {
                 if (!claimSeriesRequest()) return;
                 new Thread(() -> {
-                    String resolved = followRedirects(u);
-                    String canonical = normalizeSeriesUrl(resolved);
+                    String canonical = resolveSeriesCanonical(u);
                     String contentId = findSeriesContentIdWithFallback(canonical);
                     activity.runOnUiThread(() -> openSeries(canonical, contentId));
                 }).start();
@@ -342,7 +341,7 @@ public class MainActivity extends Activity {
                     c.setInstanceFollowRedirects(false);
                     c.setConnectTimeout(4500);
                     c.setReadTimeout(4500);
-                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/3.5");
+                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/3.6");
                     c.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en;q=0.8");
 
                     int code = c.getResponseCode();
@@ -360,6 +359,90 @@ public class MainActivity extends Activity {
                 }
             }
             return current;
+        }
+
+        private String resolveSeriesCanonical(String raw) {
+            if (raw == null || raw.trim().isEmpty()) return raw;
+
+            String candidate = raw.trim();
+
+            // naver.me -> 실제 도착 주소까지 먼저 풉니다.
+            if (candidate.contains("naver.me")) {
+                candidate = followRedirects(candidate);
+            }
+
+            // nid.naver.com 로그인 래퍼 안의 url= 파라미터에 실제 시리즈 작품주소가 들어있는 경우가 많습니다.
+            String unwrapped = unwrapSeriesUrl(candidate);
+            if (unwrapped != null) candidate = unwrapped;
+
+            // 리다이렉트 이후 다시 로그인 래퍼가 나올 수 있어 한 번 더 풉니다.
+            if (candidate.contains("nid.naver.com")) {
+                String redirected = followRedirects(candidate);
+                String again = unwrapSeriesUrl(redirected);
+                candidate = again != null ? again : redirected;
+            }
+
+            candidate = normalizeSeriesUrl(candidate);
+
+            // URL 전체가 인코딩되어 있어도 productNo를 복구해 작품주소를 재구성합니다.
+            String decoded = candidate;
+            for (int i = 0; i < 3; i++) {
+                String next = Uri.decode(decoded);
+                if (next.equals(decoded)) break;
+                decoded = next;
+            }
+
+            String embedded = extractEmbeddedSeriesUrl(decoded);
+            if (embedded != null) {
+                candidate = normalizeSeriesUrl(embedded);
+            }
+
+            String productNo = findNumberAfter(decoded, "productNo=");
+            if (productNo != null && !candidate.contains("series.naver.com")) {
+                candidate = "https://series.naver.com/novel/detail.series?productNo=" + productNo;
+            }
+
+            return candidate;
+        }
+
+        private String unwrapSeriesUrl(String raw) {
+            if (raw == null || raw.isEmpty()) return null;
+            try {
+                Uri uri = Uri.parse(raw);
+                String inner = uri.getQueryParameter("url");
+                if (inner != null && inner.contains("series.naver.com")) {
+                    return inner;
+                }
+            } catch (Exception ignored) {}
+
+            String decoded = raw;
+            for (int i = 0; i < 3; i++) {
+                try {
+                    String next = Uri.decode(decoded);
+                    if (next.equals(decoded)) break;
+                    decoded = next;
+                } catch (Exception e) {
+                    break;
+                }
+            }
+            return extractEmbeddedSeriesUrl(decoded);
+        }
+
+        private String extractEmbeddedSeriesUrl(String text) {
+            if (text == null) return null;
+            int start = text.indexOf("http://m.series.naver.com/");
+            if (start < 0) start = text.indexOf("https://m.series.naver.com/");
+            if (start < 0) start = text.indexOf("https://series.naver.com/");
+            if (start < 0) start = text.indexOf("http://series.naver.com/");
+            if (start < 0) return null;
+
+            int end = text.length();
+            String[] stops = new String[] {"&surl=", "&svctype=", "\"", "'", " "};
+            for (String stop : stops) {
+                int p = text.indexOf(stop, start);
+                if (p > start && p < end) end = p;
+            }
+            return text.substring(start, end);
         }
 
         private String normalizeSeriesUrl(String raw) {
