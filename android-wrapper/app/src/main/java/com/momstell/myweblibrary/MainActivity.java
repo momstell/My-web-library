@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -127,6 +128,8 @@ public class MainActivity extends Activity {
     public static class AndroidBridge {
         private final Activity activity;
         private final PackageManager pm;
+        private long lastSeriesRequestAt = 0L;
+        private long lastMrBlueRequestAt = 0L;
 
         AndroidBridge(Activity activity) {
             this.activity = activity;
@@ -140,6 +143,7 @@ public class MainActivity extends Activity {
             String low = u.toLowerCase(Locale.ROOT);
 
             if (p.contains("시리즈") || low.contains("series.naver") || low.contains("naver.me")) {
+                if (!claimSeriesRequest()) return;
                 new Thread(() -> {
                     String resolved = followRedirects(u);
                     String canonical = normalizeSeriesUrl(resolved);
@@ -150,6 +154,7 @@ public class MainActivity extends Activity {
             }
 
             if (p.contains("미스터블루") || low.contains("mrblue")) {
+                if (!claimMrBlueRequest()) return;
                 new Thread(() -> {
                     String resolved = followRedirects(u);
                     String target = normalizeMrBlueUrl(resolved);
@@ -159,6 +164,24 @@ public class MainActivity extends Activity {
             }
 
             activity.runOnUiThread(() -> openPlatformNow(p, u));
+        }
+
+        private synchronized boolean claimSeriesRequest() {
+            long now = SystemClock.elapsedRealtime();
+            if (now - lastSeriesRequestAt < 6000L) {
+                return false;
+            }
+            lastSeriesRequestAt = now;
+            return true;
+        }
+
+        private synchronized boolean claimMrBlueRequest() {
+            long now = SystemClock.elapsedRealtime();
+            if (now - lastMrBlueRequestAt < 4000L) {
+                return false;
+            }
+            lastMrBlueRequestAt = now;
+            return true;
         }
 
         private void openPlatformNow(String platform, String url) {
@@ -319,7 +342,7 @@ public class MainActivity extends Activity {
                     c.setInstanceFollowRedirects(false);
                     c.setConnectTimeout(4500);
                     c.setReadTimeout(4500);
-                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/3.3");
+                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/3.5");
                     c.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en;q=0.8");
 
                     int code = c.getResponseCode();
