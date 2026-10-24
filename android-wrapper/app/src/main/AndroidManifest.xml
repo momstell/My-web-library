@@ -14,7 +14,7 @@
 
     <application
         android:allowBackup="true"
-        android:label="내 소장도서관 4.3 테스트"
+        android:label="내 소장도서관 4.4 테스트"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="false">
