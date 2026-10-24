@@ -43,6 +43,13 @@
     const cover=e.target.closest('#grid.shelfMode .card .cover');
     if(!cover) return;
 
+    if((window.__mwlShelfSuppressClickUntil||0)>Date.now()){
+      e.preventDefault();
+      e.stopPropagation();
+      if(typeof e.stopImmediatePropagation==='function') e.stopImmediatePropagation();
+      return;
+    }
+
     const card=cover.closest('.card');
     if(!card) return;
 
