@@ -18,6 +18,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import org.json.JSONObject;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
@@ -145,9 +147,8 @@ public class MainActivity extends Activity {
             if (p.contains("시리즈") || low.contains("series.naver") || low.contains("naver.me") || low.contains("nid.naver.com")) {
                 if (!claimSeriesRequest()) return;
                 new Thread(() -> {
-                    String canonical = resolveSeriesCanonical(u);
-                    String contentId = findSeriesContentIdWithFallback(canonical);
-                    activity.runOnUiThread(() -> openSeries(canonical, contentId));
+                    SeriesResolveResult result = resolveSeriesOnServer(u);
+                    activity.runOnUiThread(() -> openSeriesResolved(result, u));
                 }).start();
                 return;
             }
@@ -204,7 +205,7 @@ public class MainActivity extends Activity {
             }
         }
 
-        private void openSeries(String resolvedUrl, String contentId) {
+        private void openSeriesResolved(SeriesResolveResult result, String originalUrl) {
             String pkg = firstInstalled(SERIES_PACKAGE, SERIES_FULL_PACKAGE);
             if (pkg == null) {
                 toast("시리즈 앱을 찾지 못했습니다");
@@ -212,15 +213,15 @@ public class MainActivity extends Activity {
                 return;
             }
 
-            if (contentId != null && !contentId.isEmpty()) {
-                toast("시리즈 작품 ID " + contentId);
-                Uri deep = Uri.parse("naverbooks://titleEnd?contentId=" + Uri.encode(contentId));
-                if (tryOpenUriInPackage(deep, pkg)) return;
-            } else {
-                toast("시리즈 작품 ID를 못 찾음 → 앱 홈");
+            if (result != null && result.ok && result.deepLink != null && !result.deepLink.isEmpty()) {
+                toast("시리즈 작품 연결 · " + result.via);
+                if (tryOpenUriInPackage(Uri.parse(result.deepLink), pkg)) return;
             }
 
-            Uri original = safeUri(resolvedUrl);
+            String fallbackUrl = result != null && result.canonical != null && !result.canonical.isEmpty()
+                    ? result.canonical : originalUrl;
+            toast("시리즈 내부 ID 확인 실패 → 앱 홈");
+            Uri original = safeUri(fallbackUrl);
             if (tryOpenUriInPackage(original, pkg)) return;
             launchPackage(pkg);
         }
@@ -269,6 +270,59 @@ public class MainActivity extends Activity {
                         Uri.parse("https://m.onestore.co.kr/v2/ko-kr/app/0000760861")
                 ));
             } catch (Exception ignored) {}
+        }
+
+        private static class SeriesResolveResult {
+            boolean ok;
+            String deepLink;
+            String canonical;
+            String contentId;
+            String via;
+            String error;
+        }
+
+        private SeriesResolveResult resolveSeriesOnServer(String rawUrl) {
+            SeriesResolveResult out = new SeriesResolveResult();
+            HttpURLConnection c = null;
+
+            try {
+                String encoded = URLEncoder.encode(rawUrl, "UTF-8");
+                URL url = new URL("https://ncbdmzuwhphdstxcahxk.supabase.co/functions/v1/series-resolver?url=" + encoded);
+                c = (HttpURLConnection) url.openConnection();
+                c.setConnectTimeout(7000);
+                c.setReadTimeout(10000);
+                c.setRequestMethod("GET");
+                c.setRequestProperty("Accept", "application/json");
+                c.setRequestProperty("User-Agent", "MyWebLibrary/4.0 Android");
+
+                int status = c.getResponseCode();
+                BufferedReader br = new BufferedReader(new InputStreamReader(
+                        status >= 200 && status < 400 ? c.getInputStream() : c.getErrorStream()
+                ));
+                StringBuilder body = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) body.append(line);
+                br.close();
+
+                JSONObject j = new JSONObject(body.toString());
+                out.ok = j.optBoolean("ok", false);
+                out.deepLink = j.optString("deepLink", "");
+                out.canonical = j.optString("canonical", "");
+                out.contentId = j.optString("contentId", "");
+                out.via = j.optString("via", "");
+                out.error = j.optString("error", "");
+
+                if (!out.ok && (out.error == null || out.error.isEmpty())) {
+                    out.error = "resolver status " + status;
+                }
+                return out;
+            } catch (Exception e) {
+                out.ok = false;
+                out.error = e.getClass().getSimpleName();
+                return out;
+            } finally {
+                if (c != null) c.disconnect();
+            }
         }
 
         private String firstInstalled(String... packages) {
@@ -341,7 +395,7 @@ public class MainActivity extends Activity {
                     c.setInstanceFollowRedirects(false);
                     c.setConnectTimeout(4500);
                     c.setReadTimeout(4500);
-                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/3.6");
+                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.0");
                     c.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en;q=0.8");
 
                     int code = c.getResponseCode();
