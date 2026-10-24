@@ -159,12 +159,36 @@ public class MainActivity extends Activity {
         String title = titleCs == null ? "" : titleCs.toString().trim();
         String text = textCs == null ? "" : textCs.toString().trim();
         String url = firstHttpUrl(text);
+        title = guessSharedTitle(title, text, url);
 
         Uri.Builder b = Uri.parse(LIBRARY_URL).buildUpon();
         if (!title.isEmpty()) b.appendQueryParameter("share_title", title);
         if (!text.isEmpty()) b.appendQueryParameter("share_text", text);
         if (!url.isEmpty()) b.appendQueryParameter("share_url", url);
         return b.build().toString();
+    }
+
+    private String guessSharedTitle(String subject, String text, String url) {
+        String s = subject == null ? "" : subject.trim();
+        if (!s.isEmpty()
+                && !s.matches("(?i).*(NAVER\\s*로그인|네이버\\s*로그인|NAVER\\s*시리즈|공유).*")) {
+            return s;
+        }
+
+        if (text == null || text.trim().isEmpty()) return s;
+
+        String cleaned = text;
+        if (url != null && !url.isEmpty()) cleaned = cleaned.replace(url, " ");
+        String[] lines = cleaned.split("[\\r\\n]+");
+
+        for (String line : lines) {
+            String v = line.trim();
+            if (v.length() < 2 || v.length() > 120) continue;
+            if (v.matches("(?i)https?://.*")) continue;
+            if (v.matches("(?i).*(NAVER\\s*로그인|네이버\\s*로그인|NAVER\\s*시리즈|네이버\\s*시리즈|공유하기|링크).*")) continue;
+            return v;
+        }
+        return s;
     }
 
     private String firstHttpUrl(String text) {
@@ -386,7 +410,7 @@ public class MainActivity extends Activity {
                 c.setReadTimeout(10000);
                 c.setRequestMethod("GET");
                 c.setRequestProperty("Accept", "application/json");
-                c.setRequestProperty("User-Agent", "MyWebLibrary/4.5 Android");
+                c.setRequestProperty("User-Agent", "MyWebLibrary/4.6 Android");
 
                 int status = c.getResponseCode();
                 BufferedReader br = new BufferedReader(new InputStreamReader(
@@ -813,7 +837,7 @@ public class MainActivity extends Activity {
                     c.setInstanceFollowRedirects(false);
                     c.setConnectTimeout(4500);
                     c.setReadTimeout(4500);
-                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.5");
+                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.6");
                     c.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en;q=0.8");
 
                     int code = c.getResponseCode();
