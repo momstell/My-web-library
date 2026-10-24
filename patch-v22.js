@@ -84,7 +84,7 @@
   const hint=document.createElement('div');
   hint.id='shelfHint';
   hint.className='shelfHint';
-  hint.textContent='표지를 누르면 작품 정보를 수정할 수 있습니다.';
+  hint.textContent='책장에서는 표지를 누르면 원 서비스의 작품페이지로 바로 이동합니다.';
   const titlebar=document.querySelector('.titlebar');
   if(titlebar) titlebar.insertAdjacentElement('beforebegin',hint);
 
@@ -146,10 +146,15 @@
         const b=arr[i];
         if(!b)return;
         if(viewMode==='shelf'){
-          card.onclick=e=>{if(e.target.closest('a,button,input,select,textarea'))return;edit(b.id)};
-          card.setAttribute('aria-label',`${b.title||'작품'} 정보 열기`);
+          const openBook=()=>{
+            const link=card.querySelector('a.open');
+            if(link){ link.click(); return; }
+            edit(b.id);
+          };
+          card.onclick=e=>{if(e.target.closest('a,button,input,select,textarea'))return;openBook()};
+          card.setAttribute('aria-label',`${b.title||'작품'} 원 서비스에서 열기`);
           card.tabIndex=0;
-          card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();edit(b.id)}};
+          card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openBook()}};
         }else{
           card.onclick=null;card.onkeydown=null;card.removeAttribute('aria-label');card.removeAttribute('tabindex');
         }
