@@ -45,11 +45,56 @@ public class MainActivity extends Activity {
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
 
-        webView.addJavascriptInterface(new AndroidBridge(this), "AndroidBridge");
+        s.setSupportMultipleWindows(false);
+
+        final AndroidBridge bridge = new AndroidBridge(this);
+        webView.addJavascriptInterface(bridge, "AndroidBridge");
         webView.setWebViewClient(new WebViewClient() {
+            private boolean routeKnownService(String rawUrl) {
+                if (rawUrl == null || rawUrl.trim().isEmpty()) return false;
+                String low = rawUrl.toLowerCase(Locale.ROOT);
+
+                if (low.contains("momstell.github.io/my-web-library")) return false;
+
+                if (low.contains("naver.me") || low.contains("series.naver.com")) {
+                    bridge.openPlatform("시리즈", rawUrl);
+                    return true;
+                }
+                if (low.contains("mrblue.com")) {
+                    bridge.openPlatform("미스터블루", rawUrl);
+                    return true;
+                }
+                if (low.contains("ridi.com") || low.contains("ridi.abr.ge") || low.contains("ridi.airbridge.io")) {
+                    bridge.openPlatform("리디", rawUrl);
+                    return true;
+                }
+                if (low.contains("page.kakao.com") || low.contains("kakaopage") || low.contains("kko.to")) {
+                    bridge.openPlatform("카카오페이지", rawUrl);
+                    return true;
+                }
+                return false;
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
+                String raw = uri == null ? "" : uri.toString();
+                if (routeKnownService(raw)) return true;
+
+                String host = uri == null ? null : uri.getHost();
+                if ("momstell.github.io".equalsIgnoreCase(host)) return false;
+
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                } catch (Exception ignored) {}
+                return true;
+            }
+
+            @Override
+            @SuppressWarnings("deprecation")
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                if (routeKnownService(url)) return true;
+                Uri uri = Uri.parse(url);
                 String host = uri.getHost();
                 if ("momstell.github.io".equalsIgnoreCase(host)) return false;
 
@@ -57,6 +102,16 @@ public class MainActivity extends Activity {
                     startActivity(new Intent(Intent.ACTION_VIEW, uri));
                 } catch (Exception ignored) {}
                 return true;
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // target=_blank가 시스템 웹 앱 선택창으로 빠지지 않도록 네이티브 앱에서는 제거합니다.
+                view.evaluateJavascript(
+                        "document.querySelectorAll('a.open[target]').forEach(function(a){a.removeAttribute('target');});",
+                        null
+                );
             }
         });
 
