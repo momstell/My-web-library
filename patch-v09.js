@@ -69,7 +69,18 @@
     return '';
   }
 
-  async function meta09(url){
+  async function serverMeta09(url,b,platform=''){
+    const api=new URL('https://ncbdmzuwhphdstxcahxk.supabase.co/functions/v1/book-meta-resolver');
+    api.searchParams.set('url',url);
+    api.searchParams.set('title',b?.title||'');
+    api.searchParams.set('platform',platform||'');
+    const r=await fetch(api.toString(),{headers:{'Accept':'application/json'}});
+    const j=await r.json();
+    if(!r.ok||!j?.ok) throw new Error(j?.error||'metadata');
+    return j;
+  }
+
+  async function microlink09(url){
     const api=new URL('https://api.microlink.io/');
     api.searchParams.set('url',url);
     api.searchParams.set('data.pageText.selector','body');
@@ -85,49 +96,73 @@
     let p0=(b.platforms||[]).find(x=>x.shareUrl||x.url||x.canonicalUrl);
     let u=b.shareUrl||p0?.shareUrl||b.sourceUrl||p0?.url||b.canonicalUrl||p0?.canonicalUrl||'';
     if(!u){if(loud)note('원문 링크가 없어 정보를 가져올 수 없습니다');return b}
-    if(loud)note('작품 정보를 가져오는 중…');
+    if(loud)note('작품 정보를 자동으로 가져오는 중…');
+
+    let platform=plat(u)||(b.platforms||[])[0]?.name||'';
+    let got=false;
+
     try{
-      let d=await meta09(u);
-      let cu=norm(d.url||u);
-      let platform=plat(cu)||plat(u)||(b.platforms||[])[0]?.name||'';
-      let a=authorFrom09(d,b,platform);
+      const d=await serverMeta09(u,b,platform);
+      const mt=String(d.title||'').replace(/\s+/g,' ').trim();
+      const au=tidyAuthor09(d.author||'');
+      const cv=String(d.cover||'').trim();
+      const cu=norm(d.canonicalUrl||u);
 
-      // 단축 URL이 실제 작품 페이지로 풀렸는데 작가가 안 잡히면 최종 주소를 한 번 더 읽습니다.
-      if(!a && cu && norm(cu)!==norm(u)){
-        try{
-          const d2=await meta09(cu);
-          d={...d,...d2,pageText:d2.pageText||d.pageText,description:d2.description||d.description,title:d2.title||d.title,author:d2.author||d.author,image:d2.image||d.image,url:d2.url||d.url};
-          cu=norm(d.url||cu);
-          platform=plat(cu)||platform;
-          a=authorFrom09(d,b,platform);
-        }catch{}
-      }
-
-      const mt=String(d.title||'').replace(/\s+/g,' ').trim()
-        .replace(/\s*[-|·:]\s*(?:NAVER\s*)?시리즈.*$/i,'')
-        .replace(/\s*[-|·:]\s*(?:RIDI|리디|카카오페이지|미스터블루).*$/i,'')
-        .replace(/\s+(?:NAVER\s*시리즈|네이버\s*시리즈|시리즈|RIDI|리디|카카오페이지|미스터블루)\s*$/i,'').trim();
       if(mt&&mt.length>1&&!/^(NAVER\s*시리즈|미스터블루|카카오페이지|리디)$/i.test(mt)) b.title=mt;
-      if(a && (!b.author||badAuthor09(b.author))) b.author=a;
-      if(b.author&&badAuthor09(b.author)) b.author='';
-      if(d.image?.url&&!b.cover)b.cover=d.image.url;
-      b.canonicalUrl=cu||b.canonicalUrl||'';
+      if(au&&(!b.author||badAuthor09(b.author))) b.author=au;
+      if(cv&&(!b.cover||String(b.cover).startsWith('data:image/'))) b.cover=cv;
+      if(cu)b.canonicalUrl=cu;
       b.sourceUrl=b.sourceUrl||u;
+
+      platform=d.platform||platform||plat(cu);
       if(platform&&P.includes(platform)){
         b.platforms=b.platforms||[];
         let p=b.platforms.find(x=>x.name===platform);
         if(!p){p={name:platform,ownership:'소장(범위 미확인)',range:'',url:u};b.platforms.push(p)}
         if(cu)p.canonicalUrl=cu;
       }
-      b.updatedAt=new Date().toISOString();
-      localStorage.setItem(KEY,JSON.stringify(books));
-      render();
-      if(loud)note(b.author?`작가 정보까지 보강했습니다 · ${b.author}`:'표지는 보강했지만 작가는 찾지 못했습니다');
-    }catch{
-      if(b.author&&badAuthor09(b.author))b.author='';
-      localStorage.setItem(KEY,JSON.stringify(books));
-      render();
-      if(loud)note('자동 정보 조회가 제한되어 기본 정보만 유지합니다');
+      got=!!(mt||au||cv);
+    }catch{}
+
+    // 서버 resolver에서 못 얻은 항목만 기존 Microlink로 보조합니다.
+    if(!got || !b.author || !b.cover){
+      try{
+        let d=await microlink09(u);
+        let cu=norm(d.url||u);
+        platform=plat(cu)||plat(u)||platform||(b.platforms||[])[0]?.name||'';
+        let a=authorFrom09(d,b,platform);
+
+        if(!a && cu && norm(cu)!==norm(u)){
+          try{
+            const d2=await microlink09(cu);
+            d={...d,...d2,pageText:d2.pageText||d.pageText,description:d2.description||d.description,title:d2.title||d.title,author:d2.author||d.author,image:d2.image||d.image,url:d2.url||d.url};
+            cu=norm(d.url||cu);
+            platform=plat(cu)||platform;
+            a=authorFrom09(d,b,platform);
+          }catch{}
+        }
+
+        const mt=String(d.title||'').replace(/\s+/g,' ').trim()
+          .replace(/\s*[-|·:]\s*(?:NAVER\s*)?시리즈.*$/i,'')
+          .replace(/\s*[-|·:]\s*(?:RIDI|리디|카카오페이지|미스터블루).*$/i,'')
+          .replace(/\s+(?:NAVER\s*시리즈|네이버\s*시리즈|시리즈|RIDI|리디|카카오페이지|미스터블루)\s*$/i,'').trim();
+
+        if(mt&&mt.length>1&&!/^(NAVER\s*시리즈|미스터블루|카카오페이지|리디)$/i.test(mt) && (!b.title||b.title.startsWith('제목 확인 필요'))) b.title=mt;
+        if(a && (!b.author||badAuthor09(b.author))) b.author=a;
+        if(d.image?.url&&!b.cover)b.cover=d.image.url;
+        if(cu)b.canonicalUrl=b.canonicalUrl||cu;
+      }catch{}
+    }
+
+    if(b.author&&badAuthor09(b.author)) b.author='';
+    b.updatedAt=new Date().toISOString();
+    localStorage.setItem(KEY,JSON.stringify(books));
+    render();
+
+    if(loud){
+      if(b.title&&!b.title.startsWith('제목 확인 필요')&&b.author&&b.cover) note('제목·작가·표지를 자동 보강했습니다');
+      else if(b.cover||b.author) note('가져올 수 있는 작품 정보를 보강했습니다');
+      else note('자동 정보 조회가 제한되어 기본 정보만 유지합니다');
     }
     return b;
   };
