@@ -37,6 +37,35 @@
     }
   }, true);
 
+  // 책장형에서는 표지 탭을 최우선으로 원 서비스 열기에 사용합니다.
+  // 기존 카드 onclick(수정창)이 남아 있어도 capture 단계에서 먼저 차단합니다.
+  document.addEventListener('click', e => {
+    const cover=e.target.closest('#grid.shelfMode .card .cover');
+    if(!cover) return;
+
+    const card=cover.closest('.card');
+    if(!card) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    if(typeof e.stopImmediatePropagation==='function') e.stopImmediatePropagation();
+
+    const openLink=card.querySelector('a.open');
+    if(openLink){
+      openLink.click();
+      return;
+    }
+
+    // 링크 없는 작품만 수정창을 엽니다.
+    try{
+      const title=(card.querySelector('.ttl')?.textContent||cover.textContent||'').trim();
+      const book=(typeof books!=='undefined')
+        ? books.find(b=>String(b.title||'').trim()===title)
+        : null;
+      if(book&&typeof edit==='function') edit(book.id);
+    }catch(_){}
+  }, true);
+
   const foot=document.querySelector('.foot');
   if(foot) foot.textContent='콘텐츠는 원 서비스에서 열립니다 · 개인용 소장목록 v2.4';
 })();
