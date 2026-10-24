@@ -178,9 +178,29 @@
   window.render=render;
   render();
 
-  // 막 공유된 작품은 기존 공유 등록이 끝난 뒤 작가 보강을 한 번 자동 재시도합니다.
+  // 막 공유된 작품은 제목·작가·표지 상태와 관계없이 새 resolver로 한 번 확정 보강합니다.
   setTimeout(()=>{
     const recent=[...books].sort((a,b)=>(b.lastSharedAt||'').localeCompare(a.lastSharedAt||''))[0];
-    if(recent && recent.lastSharedAt && Date.now()-Date.parse(recent.lastSharedAt)<180000 && (!recent.author||badAuthor09(recent.author))) enrich(recent,false);
+    if(recent && recent.lastSharedAt && Date.now()-Date.parse(recent.lastSharedAt)<180000){
+      enrich(recent,false);
+    }
   },900);
+
+  // 기존 서재도 이번 버전에서 한 번만, 누락된 작품만 천천히 자동 보강합니다.
+  const BACKFILL_KEY='mwl_meta_backfill_v27';
+  if(!localStorage.getItem(BACKFILL_KEY)){
+    localStorage.setItem(BACKFILL_KEY,'started');
+    const pending=books.filter(b=>
+      !b.author || badAuthor09(b.author) || !b.cover ||
+      !b.title || String(b.title).startsWith('제목 확인 필요')
+    );
+    (async()=>{
+      for(const b of pending){
+        try{ await enrich(b,false); }catch{}
+        await new Promise(r=>setTimeout(r,450));
+      }
+      localStorage.setItem(BACKFILL_KEY,'done');
+      if(pending.length) note('기존 작품의 누락 정보도 자동 보강했습니다');
+    })();
+  }
 })();
