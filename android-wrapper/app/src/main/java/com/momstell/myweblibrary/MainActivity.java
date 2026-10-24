@@ -1,13 +1,16 @@
 package com.momstell.myweblibrary;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.webkit.JavascriptInterface;
+import android.webkit.CookieManager;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -233,18 +236,24 @@ public class MainActivity extends Activity {
             }
 
             if (result != null && result.ok && result.deepLink != null && !result.deepLink.isEmpty()) {
+                if (result.productNo != null && !result.productNo.isEmpty()
+                        && result.contentId != null && !result.contentId.isEmpty()) {
+                    saveSeriesContentId(result.productNo, result.contentId);
+                }
                 toast("시리즈 작품 연결 · " + result.via);
                 if (forceOpenUriInPackage(Uri.parse(result.deepLink), pkg)) return;
             }
 
-            // 로그인/연령확인 보호작품은 서버에서 contentId를 읽지 못할 수 있습니다.
-            // 이 경우 PC URL이나 nid 로그인 래퍼 대신 실제 모바일 작품 URL을 시리즈 앱에 직접 전달합니다.
+            if (result != null && result.productNo != null && result.productNo.matches("\\d+")) {
+                openProtectedSeries(result.productNo, pkg);
+                return;
+            }
+
             String fallbackUrl = result != null && result.canonical != null && !result.canonical.isEmpty()
                     ? result.canonical : originalUrl;
-            String mobileUrl = toSeriesMobileUrl(fallbackUrl, result != null ? result.productNo : null);
-
-            if (mobileUrl != null && !mobileUrl.isEmpty()) {
-                toast("시리즈 보호작품 · 모바일 작품주소 직접 연결");
+            String mobileUrl = toSeriesMobileUrl(fallbackUrl, null);
+            if (mobileUrl != null && mobileUrl.contains("series.naver.com")) {
+                toast("시리즈 작품주소 직접 연결");
                 if (forceOpenUriInPackage(Uri.parse(mobileUrl), pkg)) return;
             }
 
@@ -325,7 +334,7 @@ public class MainActivity extends Activity {
                 c.setReadTimeout(10000);
                 c.setRequestMethod("GET");
                 c.setRequestProperty("Accept", "application/json");
-                c.setRequestProperty("User-Agent", "MyWebLibrary/4.2 Android");
+                c.setRequestProperty("User-Agent", "MyWebLibrary/4.3 Android");
 
                 int status = c.getResponseCode();
                 BufferedReader br = new BufferedReader(new InputStreamReader(
@@ -364,6 +373,211 @@ public class MainActivity extends Activity {
                     pm.getPackageInfo(pkg, 0);
                     return pkg;
                 } catch (Exception ignored) {}
+            }
+            return null;
+        }
+
+        private SharedPreferences seriesPrefs() {
+            return activity.getSharedPreferences("mwl_series_links", Activity.MODE_PRIVATE);
+        }
+
+        private String cachedSeriesContentId(String productNo) {
+            return seriesPrefs().getString("content_" + productNo, null);
+        }
+
+        private void saveSeriesContentId(String productNo, String contentId) {
+            if (productNo == null || contentId == null) return;
+            if (!productNo.matches("\\d+") || !contentId.matches("\\d+")) return;
+            seriesPrefs().edit().putString("content_" + productNo, contentId).apply();
+        }
+
+        private void openProtectedSeries(String productNo, String pkg) {
+            String cached = cachedSeriesContentId(productNo);
+            if (cached != null && cached.matches("\\d+")) {
+                toast("시리즈 보호작품 · 저장된 작품 ID");
+                if (forceOpenUriInPackage(
+                        Uri.parse("naverbooks://titleEnd?contentId=" + Uri.encode(cached)), pkg)) return;
+            }
+
+            CookieManager cm = CookieManager.getInstance();
+            String cookie = cm.getCookie("https://series.naver.com");
+            if (cookie != null && !cookie.trim().isEmpty()) {
+                new Thread(() -> {
+                    String id = resolveProtectedContentId(productNo, cookie);
+                    activity.runOnUiThread(() -> {
+                        if (id != null) {
+                            saveSeriesContentId(productNo, id);
+                            toast("시리즈 보호작품 · 기기 로그인으로 연결");
+                            forceOpenUriInPackage(
+                                    Uri.parse("naverbooks://titleEnd?contentId=" + Uri.encode(id)), pkg);
+                        } else {
+                            showSeriesLoginResolver(productNo, pkg);
+                        }
+                    });
+                }).start();
+                return;
+            }
+
+            showSeriesLoginResolver(productNo, pkg);
+        }
+
+        private void showSeriesLoginResolver(String productNo, String pkg) {
+            final WebView auth = new WebView(activity);
+            WebSettings ws = auth.getSettings();
+            ws.setJavaScriptEnabled(true);
+            ws.setDomStorageEnabled(true);
+            ws.setDatabaseEnabled(true);
+
+            CookieManager cm = CookieManager.getInstance();
+            cm.setAcceptCookie(true);
+            cm.setAcceptThirdPartyCookies(auth, true);
+
+            final AlertDialog[] holder = new AlertDialog[1];
+
+            auth.setWebViewClient(new WebViewClient() {
+                private boolean resolving = false;
+                private long lastAttemptAt = 0L;
+
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    return false;
+                }
+
+                @Override
+                @SuppressWarnings("deprecation")
+                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                    return false;
+                }
+
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+
+                    long now = SystemClock.elapsedRealtime();
+                    if (resolving || now - lastAttemptAt < 1500L) return;
+
+                    String cookie = CookieManager.getInstance().getCookie("https://series.naver.com");
+                    if (cookie == null || cookie.trim().isEmpty()) return;
+
+                    lastAttemptAt = now;
+                    resolving = true;
+
+                    new Thread(() -> {
+                        String id = resolveProtectedContentId(productNo, cookie);
+                        activity.runOnUiThread(() -> {
+                            if (id != null) {
+                                saveSeriesContentId(productNo, id);
+                                if (holder[0] != null && holder[0].isShowing()) holder[0].dismiss();
+                                auth.destroy();
+                                toast("시리즈 보호작품 연동 완료");
+                                forceOpenUriInPackage(
+                                        Uri.parse("naverbooks://titleEnd?contentId=" + Uri.encode(id)), pkg);
+                            } else {
+                                resolving = false;
+                            }
+                        });
+                    }).start();
+                }
+            });
+
+            String target = "https://m.series.naver.com/novel/detail.series?productNo=" + productNo;
+            AlertDialog dialog = new AlertDialog.Builder(activity)
+                    .setTitle("시리즈 보호작품 1회 연동")
+                    .setMessage("네이버 페이지에서 로그인/연령확인을 완료하면 자동으로 작품 ID를 연결합니다. 로그인 정보는 이 기기 안에서만 사용됩니다.")
+                    .setView(auth)
+                    .setNegativeButton("취소", (d, which) -> auth.destroy())
+                    .create();
+            holder[0] = dialog;
+            dialog.setOnDismissListener(d -> {
+                try {
+                    if (auth.getParent() != null) {
+                        auth.stopLoading();
+                    }
+                } catch (Exception ignored) {}
+            });
+            dialog.show();
+            auth.loadUrl(target);
+        }
+
+        private String resolveProtectedContentId(String productNo, String cookie) {
+            String[] kinds = new String[] {"novel", "ebook", "comic"};
+
+            for (String kind : kinds) {
+                HttpURLConnection conn = null;
+                try {
+                    URL u = new URL("https://series.naver.com/" + kind
+                            + "/volumeList.series?productNo=" + productNo
+                            + "&sortOrder=ASC&page=1");
+                    conn = (HttpURLConnection) u.openConnection();
+                    conn.setConnectTimeout(6000);
+                    conn.setReadTimeout(8000);
+                    conn.setInstanceFollowRedirects(true);
+                    conn.setRequestProperty("User-Agent",
+                            "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/129 Mobile Safari/537.36");
+                    conn.setRequestProperty("Accept", "application/json, text/javascript, */*; q=0.01");
+                    conn.setRequestProperty("X-Requested-With", "XMLHttpRequest");
+                    conn.setRequestProperty("Referer", "https://series.naver.com/");
+                    conn.setRequestProperty("Cookie", cookie);
+
+                    int status = conn.getResponseCode();
+                    if (status >= 200 && status < 400) {
+                        BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                        StringBuilder body = new StringBuilder();
+                        String line;
+                        while ((line = br.readLine()) != null) body.append(line).append('\n');
+                        br.close();
+
+                        String text = body.toString();
+                        String[] keys = new String[] {
+                                "upperOriginalProductId",
+                                "upperOriginalProductNo",
+                                "contentId",
+                                "content_id",
+                                "titleId",
+                                "title_id"
+                        };
+                        for (String key : keys) {
+                            String id = findDigitsNearKey(text, key);
+                            if (id != null) return id;
+                        }
+                    }
+                } catch (Exception ignored) {
+                } finally {
+                    if (conn != null) conn.disconnect();
+                }
+            }
+
+            // 회차 API가 계속 막히는 경우 로그인된 상세 HTML도 한 번 확인합니다.
+            HttpURLConnection conn = null;
+            try {
+                URL u = new URL("https://series.naver.com/novel/detail.series?productNo=" + productNo);
+                conn = (HttpURLConnection) u.openConnection();
+                conn.setConnectTimeout(6000);
+                conn.setReadTimeout(8000);
+                conn.setInstanceFollowRedirects(true);
+                conn.setRequestProperty("User-Agent",
+                        "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/129 Mobile Safari/537.36");
+                conn.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9");
+                conn.setRequestProperty("Cookie", cookie);
+
+                if (conn.getResponseCode() >= 200 && conn.getResponseCode() < 400) {
+                    BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuilder body = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) body.append(line).append('\n');
+                    br.close();
+
+                    String text = body.toString();
+                    for (String key : new String[] {
+                            "upperOriginalProductId", "content_id", "title_id", "contentId", "titleId"
+                    }) {
+                        String id = findDigitsNearKey(text, key);
+                        if (id != null) return id;
+                    }
+                }
+            } catch (Exception ignored) {
+            } finally {
+                if (conn != null) conn.disconnect();
             }
             return null;
         }
@@ -477,7 +691,7 @@ public class MainActivity extends Activity {
                     c.setInstanceFollowRedirects(false);
                     c.setConnectTimeout(4500);
                     c.setReadTimeout(4500);
-                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.2");
+                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36 MyWebLibrary/4.3");
                     c.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en;q=0.8");
 
                     int code = c.getResponseCode();
