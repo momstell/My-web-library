@@ -16,8 +16,17 @@
     e.preventDefault();
     e.stopPropagation();
     try{
-      const nativeUrl=(a.dataset&&a.dataset.nativeUrl)||a.href||'';
       const title=(a.dataset&&a.dataset.bookTitle)||(a.closest('.card')?.querySelector('.ttl')?.textContent||'').trim();
+      let nativeUrl=(a.dataset&&a.dataset.nativeUrl)||a.href||'';
+      try{
+        if(typeof books!=='undefined'&&title){
+          const book=books.find(b=>String(b.title||'').trim()===title);
+          if(book){
+            const platform=(book.platforms||[]).find(x=>String(x.name||'').includes('시리즈'));
+            nativeUrl=(platform&&platform.canonicalUrl)||book.canonicalUrl||book.sourceUrl||(platform&&platform.url)||nativeUrl;
+          }
+        }
+      }catch(_){}
       if(typeof window.AndroidBridge.openPlatformV2==='function'){
         window.AndroidBridge.openPlatformV2(platformFromLink(a), nativeUrl, title);
       }else{
