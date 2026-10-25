@@ -16,7 +16,7 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_library_launcher"
         android:roundIcon="@drawable/ic_library_launcher"
-        android:label="내 소장도서관"
+        android:label="비밀서재"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="false">
