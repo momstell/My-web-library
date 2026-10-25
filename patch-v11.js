@@ -81,25 +81,44 @@
         note('표지 사진을 준비하는 중…');
         const data=await compressCover(file);
         coverInput.value=data;
+        coverInput.dataset.manual='1';
         showPreview(data);
         note('표지 사진을 등록했습니다');
       }catch{note('이 사진을 불러오지 못했습니다')}
       e.target.value='';
     });
   }
-  if(removeBtn) removeBtn.addEventListener('click',()=>{coverInput.value='';showPreview('');note('표지를 제거했습니다')});
+  if(removeBtn) removeBtn.addEventListener('click',()=>{coverInput.value='';coverInput.dataset.manual='0';showPreview('');note('표지를 제거했습니다')});
 
   const edit10=window.edit;
   window.edit=function(id){
     edit10(id);
-    setTimeout(()=>showPreview(document.querySelector('#cover')?.value||''),0);
+    setTimeout(()=>{const b=books.find(x=>String(x.id)===String(id));coverInput.dataset.manual=b?.coverManual?'1':'0';showPreview(document.querySelector('#cover')?.value||'')},0);
   };
 
   const add=document.querySelector('#add');
-  if(add) add.addEventListener('click',()=>setTimeout(()=>showPreview(''),0));
+  if(add) add.addEventListener('click',()=>setTimeout(()=>{coverInput.dataset.manual='0';showPreview('')},0));
 
   // 직접 URL을 다시 넣는 경우에도 미리보기 동기화 (개발/복원용)
-  coverInput.addEventListener('change',()=>showPreview(coverInput.value||''));
+  coverInput.addEventListener('change',()=>{coverInput.dataset.manual='1';showPreview(coverInput.value||'')});
+
+  const form11=document.querySelector('#form');
+  if(form11){
+    form11.addEventListener('submit',()=>{
+      const id=document.querySelector('#id')?.value||'';
+      const title=document.querySelector('#title')?.value.trim()||'';
+      const author=document.querySelector('#author')?.value.trim()||'';
+      const manual=coverInput.dataset.manual==='1';
+      setTimeout(()=>{
+        let b=id?books.find(x=>String(x.id)===String(id)):null;
+        if(!b)b=[...books].filter(x=>String(x.title||'').trim()===title&&String(x.author||'').trim()===author)
+          .sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))[0];
+        if(!b)return;
+        b.coverManual=manual;
+        localStorage.setItem(KEY,JSON.stringify(books));
+      },0);
+    });
+  }
 
   const render10=render;
   render=function(){
