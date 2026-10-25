@@ -112,13 +112,13 @@
       const d=await serverMeta09(u,b,platform);
       const mt=String(d.title||'').replace(/\s+/g,' ').trim();
       const au=tidyAuthor09(d.author||'');
-      const cv=String(d.cover||'').trim();
+      const cv=String(d.coverDataUrl||d.cover||'').trim();
       const cu=norm(d.canonicalUrl||u);
 
       if(mt&&mt.length>1&&!/^(NAVER\s*시리즈|네이버\s*로그인|NAVER\s*로그인|미스터블루|카카오페이지|리디)$/i.test(mt)
           && (badTitle09(b.title)||!b.title||b.title.startsWith('제목 확인 필요'))) b.title=mt;
       if(au&&(!b.author||badAuthor09(b.author))) b.author=au;
-      if(cv && (platform==='시리즈' ? !String(b.cover||'').startsWith('data:image/') : badCover09(b.cover))) b.cover=cv;
+      if(cv && (platform==='시리즈' ? !b.coverManual : badCover09(b.cover))) b.cover=cv;
       if(cu)b.canonicalUrl=cu;
       b.sourceUrl=b.sourceUrl||u;
 
@@ -196,7 +196,7 @@
   },900);
 
   // 기존 서재도 이번 버전에서 한 번만, 누락된 작품만 천천히 자동 보강합니다.
-  const BACKFILL_KEY='mwl_meta_backfill_v31';
+  const BACKFILL_KEY='mwl_meta_backfill_v33';
   if(!localStorage.getItem(BACKFILL_KEY)){
     localStorage.setItem(BACKFILL_KEY,'started');
     const pending=books.filter(b=>
