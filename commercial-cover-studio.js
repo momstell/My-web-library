@@ -129,8 +129,6 @@ const all=rows.map((r,i)=>({id:i+1,group:r[0],name:r[1],mood:r[2],genre:r[3],ima
 const groupCount=key=>all.filter(x=>x.group===key).length;
 const esc=v=>String(v||"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
 const style=document.createElement("style");style.textContent=`
-.comDemo{margin:10px 0 16px;border:1px solid #eadcf0;border-radius:16px;padding:12px 14px;background:linear-gradient(120deg,#fff8fc,#f5f2ff);color:#655070;font-size:12px;line-height:1.55}
-.comBtn{margin:12px 0;border:1px solid #dfcbea;border-radius:12px;background:white;color:#5d4070;padding:10px 14px;font-size:13px;font-weight:900}
 #comStudio{border:0;border-radius:22px;padding:0;width:min(980px,calc(100% - 16px));max-height:94vh;overflow:hidden}
 #comStudio::backdrop{background:rgba(20,12,30,.74)}
 #comStudio .top{padding:16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ece6f1}
@@ -158,13 +156,26 @@ const style=document.createElement("style");style.textContent=`
 #comStudio .upload{padding:20px;border:2px dashed #d6c1e8;border-radius:14px;background:#fdfaff;text-align:center;font-size:12px;line-height:1.9;color:#645572}
 #comStudio .pick{padding:10px 15px;background:#64447f;color:white;border:0;border-radius:10px;font-weight:800}
 #comStudio .foot{padding:10px 15px;text-align:center;font-size:10px;color:#928997;background:#fff}
-@media(max-width:680px){#comStudio .cols{grid-template-columns:1fr;height:min(82vh,760px);overflow-y:auto}#comStudio .browse{padding:8px;overflow:visible}#comStudio .list{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}#comStudio .preview{display:grid;grid-template-columns:92px 1fr;align-items:center;gap:8px;border-left:0;border-top:1px solid #eae0f0;padding:9px 12px}#comStudio .comTargetLabel{grid-column:1/-1}#comStudio .comTarget{grid-column:1/-1}#comStudio .preview img{grid-row:3/6;width:92px}#comStudio .preview .desc{align-self:end}#comStudio .apply{align-self:start;font-size:11px;padding:10px 4px}#comStudio .foot{font-size:9px}#comStudio h3{font-size:17px}}
+@media(max-width:680px){
+  #comStudio{width:calc(100vw - 20px);max-height:92dvh;border-radius:18px}
+  #comStudio .cols{display:flex;flex-direction:column;height:min(78dvh,760px);overflow:hidden}
+  #comStudio .browse{flex:1;min-height:0;padding:8px;overflow-y:auto}
+  #comStudio .list{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px}
+  #comStudio .item{padding:2px;border-width:1px}
+  #comStudio .item img{width:100%;height:auto;max-height:150px;aspect-ratio:2/3;object-fit:cover}
+  #comStudio .item small{font-size:9px}
+  #comStudio .item em{font-size:8px}
+  #comStudio .preview{flex:none;display:grid;grid-template-columns:62px minmax(0,1fr);align-items:center;gap:5px 9px;border-left:0;border-top:1px solid #eae0f0;padding:8px 10px;overflow:visible}
+  #comStudio .comTargetLabel,#comStudio .comTarget,#comStudio .preview .desc{grid-column:2}
+  #comStudio .comTargetLabel{grid-row:1}
+  #comStudio .comTarget{grid-row:2;padding:6px}
+  #comStudio .preview img{grid-column:1;grid-row:1/4;width:62px;height:93px;max-width:none;aspect-ratio:2/3;object-fit:cover}
+  #comStudio .preview .desc{grid-row:3;text-align:left}
+  #comStudio .apply{grid-column:1/-1;font-size:12px;padding:10px}
+  #comStudio .foot{font-size:9px}
+  #comStudio h3{font-size:17px}
+}
 `;document.head.appendChild(style);
-const main=document.querySelector("main.main")||document.querySelector(".main");
-const ribbon=document.createElement("div");ribbon.className="comDemo";ribbon.textContent=`📚 오리지널 캐릭터 표지 ${all.length}종 · 남자 ${groupCount("male")} · 여자 ${groupCount("female")} · 커플·가족 ${groupCount("couple")}`;
-main?.insertAdjacentElement("afterbegin",ribbon);
-const button=document.createElement("button");button.type="button";button.className="comBtn";button.textContent="🎨 캐릭터 표지 고르기";
-ribbon.insertAdjacentElement("afterend",button);
 const cloud=document.getElementById("cloudBar");if(cloud)cloud.style.display="none";
 const d=document.createElement("dialog");d.id="comStudio";
 d.innerHTML=`<div class="top"><div><h3>캐릭터 표지 스튜디오 · ${all.length}종</h3><div class="intro">표정을 보고, 분위기를 고르고, 책장에 직접 꽂아 보세요.</div></div><button class="x" type="button" aria-label="닫기">×</button></div>
@@ -194,7 +205,7 @@ ownInput.onchange=async()=>{const file=ownInput.files?.[0];if(!file)return;const
 let busy=false;
 q(".apply").onclick=async()=>{if(busy)return;if(mode==="mine"&&!own){note("먼저 사진을 선택해주세요");return}busy=true;const b=q(".apply");b.disabled=true;b.textContent="저장 중…";try{const [title,author]=titleAndAuthor();const raster=mode==="mine"?own:await completedCover(selected,title,author);const input=document.getElementById("cover");if(input){input.value=raster;input.dataset.manual="1";input.dataset.coverSource=mode==="mine"?"user-upload":"character-template";input.dataset.coverTemplateId=mode==="mine"?"":String(selected.id);input.dataset.coverCategory=mode==="mine"?"":selected.group;input.dispatchEvent(new Event("change",{bubbles:true}))}const item=currentBook();if(item){item.cover=raster;item.coverManual=true;item.coverSource=mode==="mine"?"user-upload":"character-template";item.coverTemplateId=mode==="mine"?null:selected.id;item.coverCategory=mode==="mine"?null:selected.group;item.coverMood=mode==="mine"?null:selected.mood;item.coverGenre=mode==="mine"?null:selected.genre;item.updatedAt=new Date().toISOString();save();note("책장에 표지가 저장됐어요") }else note("표지를 골랐어요. 작품 등록창에서 저장을 눌러주세요.");d.close()}catch(e){note("이미지 저장을 완료하지 못했습니다.")}finally{busy=false;b.disabled=false;b.textContent="이 표지 저장"}};
 function open(id="",fromForm=false){usingForm=fromForm;targetId=fromForm?String(id||""):"";const selector=q("#comTarget");selector.replaceChildren(new Option(fromForm&&!id?"새 작품 등록 중":"작품 선택",""));if(!fromForm){for(const b of list())selector.appendChild(new Option(b.title||"제목 없음",String(b.id)));if(!targetId&&selector.options.length>1)targetId=selector.options[1].value}else if(id){const b=books.find(x=>String(x.id)===String(id));if(b)selector.appendChild(new Option(b.title||"제목 없음",String(b.id)))}selector.value=targetId;selector.disabled=fromForm;own="";mood="전체";genre="전체";searchTerm="";q(".search").value="";featuredOnly=false;selected=all.find(t=>t.id===(currentBook()?.coverTemplateId||1))||all[0];q('[data-feature="all"]').classList.add("on");q('[data-feature="featured"]').classList.remove("on");buildChips("mood");buildChips("genre");showGrid();setMode("all");if(!d.open)d.showModal()}
-q("#comTarget").onchange=e=>{targetId=e.target.value;preview()};button.onclick=()=>open("",false);
+q("#comTarget").onchange=e=>{targetId=e.target.value;preview()};
 q(".search").oninput=e=>{searchTerm=e.target.value.trim().toLowerCase();showGrid()};
 document.querySelector("#title")?.addEventListener("input",()=>{if(d.open&&usingForm)preview()});document.querySelector("#author")?.addEventListener("input",()=>{if(d.open&&usingForm)preview()});
 const picker=document.querySelector("#coverPicker .coverPickActions");if(picker){const add=document.createElement("button");add.type="button";add.className="coverPickBtn";add.textContent="🎨 캐릭터 표지";picker.prepend(add);add.onclick=()=>open(document.getElementById("id")?.value||"",true)}

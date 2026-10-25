@@ -1,6 +1,6 @@
-# 내 소장도서관 v5.2.4 캐릭터 표지 101종 PNG 아이콘 테스트
+# 내 소장도서관 v5.2.5 캐릭터 표지 갤러리 개선 테스트
 
-v5.2.4 확장 APK는 v4.9.3 및 이전 테스트 APK와 다른 Android application ID(`com.momstell.myweblibrary.v524test`)를 사용하므로 앱 데이터를 건드리지 않고 함께 설치할 수 있습니다. 표지 스튜디오와 웹앱 파일은 APK 안에 담아 테스트 브랜치 버전으로 실행합니다.
+v5.2.5 확장 APK는 v4.9.3 및 이전 테스트 APK와 다른 Android application ID(`com.momstell.myweblibrary.v525test`)를 사용하므로 앱 데이터를 건드리지 않고 함께 설치할 수 있습니다. 표지 스튜디오와 웹앱 파일은 APK 안에 담아 테스트 브랜치 버전으로 실행합니다.
 
 ## 빌드
 
@@ -8,7 +8,7 @@ v5.2.4 확장 APK는 v4.9.3 및 이전 테스트 APK와 다른 Android applicati
 gradle -p android-wrapper assembleDebug
 ```
 
-빌드 전 `preBuild` 작업이 루트의 앱 페이지, 패치 스크립트, 101개 표지 자산을 Android assets로 복사합니다. 테스트 APK는 GitHub Actions의 `cover-studio-v5.2.4-launcher-icon-fix-debug` 아티팩트로 생성됩니다.
+빌드 전 `preBuild` 작업이 루트의 앱 페이지, 패치 스크립트, 101개 표지 자산을 Android assets로 복사합니다. 테스트 APK는 GitHub Actions의 `cover-studio-v5.2.5-gallery-ui-debug` 아티팩트로 생성됩니다.
 
 ## 표지 스튜디오
 
