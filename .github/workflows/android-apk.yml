@@ -6,6 +6,7 @@ on:
     paths:
       - "android-wrapper/**"
       - "patch-v24.js"
+      - "patch-v25.js"
       - ".github/workflows/android-apk.yml"
 
 jobs:
