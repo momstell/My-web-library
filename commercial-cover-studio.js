@@ -69,7 +69,7 @@ const style=document.createElement("style");style.textContent=`
 #comStudio .item img{aspect-ratio:2/3;width:100%;display:block;object-fit:cover;border-radius:7px;box-shadow:0 3px 10px #0002}
 #comStudio .item small{display:block;font-size:9px;margin:5px 1px;color:#5b5364;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
 #comStudio .preview{background:#faf7fc;border-left:1px solid #eae0f0;padding:15px;display:flex;align-items:center;flex-direction:column;gap:11px;overflow-y:auto}
-#comStudio .preview img{width:100%;max-width:178px;aspect-ratio:2/3;object-fit:cover;border-radius:9px;box-shadow:0 8px 25px #0003}
+#comStudio .comTargetLabel{color:#685a72;font-size:11px;font-weight:850}#comStudio .comTarget{width:100%;border:1px solid #ded1e6;background:white;border-radius:9px;padding:7px;min-width:0;font-size:11px;color:#4a365c}#comStudio .preview img{width:100%;max-width:178px;aspect-ratio:2/3;object-fit:cover;border-radius:9px;box-shadow:0 8px 25px #0003}
 #comStudio .preview .desc{font-size:12px;text-align:center;color:#5d5363;font-weight:700}
 #comStudio .apply{background:#64447f;color:#fff;border:0;border-radius:12px;padding:12px;width:100%;font-weight:900}
 #comStudio .upload{padding:20px;border:2px dashed #d6c1e8;border-radius:14px;background:#fdfaff;text-align:center;font-size:12px;line-height:1.9;color:#645572}
@@ -91,14 +91,14 @@ d.innerHTML=`<div class="top"><div><h3>표지 스튜디오 · 50종</h3><div cla
 <div class="cols"><div class="browse"><div class="tabs"><button type="button" class="tab on" data-mode="ready">추천 표지 50종</button><button type="button" class="tab" data-mode="mine">내 이미지 등록</button></div>
 <div id="comReady"><div class="filters"></div><div class="list"></div></div>
 <div id="comMine" hidden><div class="upload">휴대전화 사진을 직접 등록할 수 있습니다.<p><button class="pick" type="button">사진 선택하기</button><input type="file" id="comFile" accept="image/*" hidden></p><small>개인 이미지의 권리는 등록하는 이용자가 확인합니다.</small></div></div></div>
-<div class="preview"><img id="comPreview" alt="표지 미리보기"><div class="desc" id="comDesc"></div><button type="button" class="apply">이 표지 저장</button></div></div>
+<div class="preview"><label class="comTargetLabel" for="comTarget">표지를 적용할 작품</label><select id="comTarget" class="comTarget"></select><img id="comPreview" alt="표지 미리보기"><div class="desc" id="comDesc"></div><button type="button" class="apply">이 표지 저장</button></div></div>
 <div class="foot">이 앱의 기본 표지는 원작 이미지와 무관하게 만든 벡터 일러스트 템플릿입니다.</div>`;
 document.body.appendChild(d);
 const q=s=>d.querySelector(s),filters=q(".filters"),listGrid=q(".list");
-let selected=all[0],mode="ready",filter="전체",targetId="",own="";
+let selected=all[0],mode="ready",filter="전체",targetId="",own="",usingForm=false;
 function currentBook(){return books.find(x=>String(x.id)===String(targetId))||null;}
 function titleAndAuthor(){
-const b=currentBook();return [document.querySelector("#title")?.value.trim()||b?.title||"나만의 소장도서",document.querySelector("#author")?.value.trim()||b?.author||"MY LIBRARY"];
+const b=currentBook();return [usingForm?document.querySelector("#title")?.value.trim()||b?.title||"나만의 소장도서":b?.title||"나만의 소장도서",usingForm?document.querySelector("#author")?.value.trim()||b?.author||"MY LIBRARY":b?.author||"MY LIBRARY"];
 }
 function preview(){
 const [title,author]=titleAndAuthor();
@@ -161,18 +161,24 @@ try{
 }catch(e){note("이미지 저장을 완료하지 못했습니다.");}
 finally{busy=false;b.disabled=false;b.textContent="이 표지 저장";}
 };
-function open(id=""){
-targetId=id||document.getElementById("id")?.value||"";
+function open(id="",fromForm=false){
+usingForm=fromForm;
+targetId=fromForm?String(id||""):"";
+const selector=q("#comTarget");selector.replaceChildren(new Option(fromForm&&!id?"새 작품 등록 중":"작품 선택",""));
+if(!fromForm){for(const b of list())selector.appendChild(new Option(b.title||"제목 없음",String(b.id)));if(!targetId&&selector.options.length>1)targetId=selector.options[1].value;}
+else if(id){const b=books.find(x=>String(x.id)===String(id));if(b)selector.appendChild(new Option(b.title||"제목 없음",String(b.id)));}
+selector.value=targetId;selector.disabled=fromForm;
 own="";filter="전체";filters.querySelectorAll(".filter").forEach(b=>b.classList.toggle("on",b.textContent==="전체"));
 const book=currentBook();
 if(book?.coverTemplateId)selected=all.find(t=>t.id===book.coverTemplateId)||all[0];
 showGrid();tab("ready");if(!d.open)d.showModal();
 }
-button.onclick=()=>open("");
+q("#comTarget").onchange=e=>{targetId=e.target.value;preview()};
+button.onclick=()=>open("",false);
 const picker=document.querySelector("#coverPicker .coverPickActions");
 if(picker){
 const add=document.createElement("button");add.type="button";add.className="coverPickBtn";add.textContent="🎨 50종 표지 선택";
-picker.prepend(add);add.onclick=()=>open(document.getElementById("id")?.value||"");
+picker.prepend(add);add.onclick=()=>open(document.getElementById("id")?.value||"",true);
 }
 window.openCommercialCoverStudio=open;
 // Seed fictitious sample book cards only inside an empty, separately installed prototype.
