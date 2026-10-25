@@ -27,6 +27,15 @@
     .viewBtn{border:0;background:transparent;color:#777d89;border-radius:8px;padding:7px 9px;font-size:11px;font-weight:850;white-space:nowrap}
     .viewBtn.on{background:#fff;color:#1d202d;box-shadow:0 1px 5px rgba(24,27,40,.08)}
     .sortSelect{height:34px;border:1px solid #e0e2ea;background:#fff;color:#555b68;border-radius:10px;padding:0 8px;font-size:11px;font-weight:750;outline:none}
+    .sortSelect:disabled{opacity:.55}
+    .arrangeWrap{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e0e2ea;border-radius:999px;padding:5px 8px 5px 10px;white-space:nowrap}
+    .arrangeWrap.hide{display:none}
+    .arrangeText{font-size:10px;font-weight:850;color:#676d79}
+    .arrangeSwitch{position:absolute;opacity:0;pointer-events:none}
+    .arrangeTrack{position:relative;width:34px;height:20px;border-radius:999px;background:#d9dce6;transition:.18s}
+    .arrangeKnob{position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.22);transition:.18s}
+    .arrangeSwitch:checked + .arrangeTrack{background:#7058ff}
+    .arrangeSwitch:checked + .arrangeTrack .arrangeKnob{transform:translateX(14px)}
     .sortSelect:disabled{opacity:.48;background:#f2f3f7}
     .manualShelfControl{display:none;align-items:center;gap:7px;font-size:10px;font-weight:850;color:#666c78;white-space:nowrap}
     .manualShelfControl.show{display:flex}
@@ -153,9 +162,32 @@
   if(sortSelect){
     sortSelect.value=sortMode;
     sortSelect.addEventListener('change',()=>{
+      if(arrangeMode==='manual') return;
       sortMode=sortSelect.value;
+      if(sortMode==='shelf') sortMode='recent';
       localStorage.setItem(SORT_KEY,sortMode);
       render();
+    });
+  }
+
+  const arrangeSwitch=document.querySelector('#arrangeSwitch');
+  if(arrangeSwitch){
+    arrangeSwitch.checked=arrangeMode==='manual';
+    arrangeSwitch.addEventListener('change',()=>{
+      arrangeMode=arrangeSwitch.checked?'manual':'auto';
+      localStorage.setItem(ARRANGE_KEY,arrangeMode);
+      if(arrangeMode==='manual'){
+        ensureShelfOrders();
+        sortMode='shelf';
+        localStorage.setItem(SORT_KEY,sortMode);
+        save();
+        note('직접 정렬 켜짐 · 표지를 길게 눌러 옮기세요');
+      }else{
+        if(sortMode==='shelf') sortMode='recent';
+        localStorage.setItem(SORT_KEY,sortMode);
+        render();
+        note('자동 정렬 켜짐');
+      }
     });
   }
   const manualToggle=document.querySelector('#manualShelfToggle');
@@ -195,6 +227,7 @@
     const grid=document.querySelector('#grid');
     if(grid){
       grid.classList.toggle('shelfMode',viewMode==='shelf');
+      grid.classList.toggle('manualArrange',viewMode==='shelf'&&arrangeMode==='manual');
       const cards=[...grid.querySelectorAll('.card')];
       cards.forEach((card,i)=>{
         const b=arr[i];
@@ -244,69 +277,89 @@
   };
   let shelfGesture=null;
 
-  function shelfPointFromTouch(e){
-    const t=e.touches?.[0]||e.changedTouches?.[0];
-    return t?{x:t.clientX,y:t.clientY,id:t.identifier}:null;
-  }
   function clearShelfTimer(){
     if(shelfGesture?.timer){clearTimeout(shelfGesture.timer);shelfGesture.timer=null}
   }
-  function startShelfGesture(cover,card,grid,x,y,id,kind){
-    if(!manualShelf||viewMode!=='shelf')return;
-    shelfGesture={cover,card,grid,startX:x,startY:y,lastX:x,lastY:y,id,kind,active:false,timer:null,ghost:null,offsetX:0,offsetY:0};
-    shelfGesture.timer=setTimeout(()=>{
-      const s=shelfGesture;
-      if(!s||s.id!==id||s.kind!==kind||!manualShelf)return;
-      ensureShelfOrders();
-      s.active=true;
-      window.__mwlShelfSuppressClickUntil=Date.now()+1400;
-      const rect=s.cover.getBoundingClientRect();
-      s.offsetX=s.lastX-rect.left;s.offsetY=s.lastY-rect.top;
-      const ghost=s.cover.cloneNode(true);
-      ghost.classList.add('shelfDragGhost');
-      Object.assign(ghost.style,{left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px'});
-      document.body.appendChild(ghost);
-      s.ghost=ghost;
-      s.card.classList.add('shelfDragging');
-      document.body.classList.add('shelfReordering');
-      try{navigator.vibrate?.(35)}catch(_){}
-    },430);
-  }
-  function moveShelfGesture(x,y){
-    const s=shelfGesture;if(!s)return;
+
+  function coordsMove(x,y){
+    const s=shelfGesture;
+    if(!s||!s.active)return;
+
     s.lastX=x;s.lastY=y;
-    const moved=Math.hypot(x-s.startX,y-s.startY);
-    if(!s.active){
-      // 작은 손떨림은 허용하고, 실제 스크롤 수준으로 움직였을 때만 길게누르기를 취소합니다.
-      if(moved>22){clearShelfTimer();shelfGesture=null}
-      return;
+    if(s.ghost){
+      s.ghost.style.left=(x-s.offsetX)+'px';
+      s.ghost.style.top=(y-s.offsetY)+'px';
     }
-    if(s.ghost){s.ghost.style.left=(x-s.offsetX)+'px';s.ghost.style.top=(y-s.offsetY)+'px'}
-    if(y<85)window.scrollBy(0,-14);
-    else if(y>window.innerHeight-95)window.scrollBy(0,14);
+
+    if(y<86)window.scrollBy(0,-13);
+    else if(y>window.innerHeight-96)window.scrollBy(0,13);
+
     const hit=document.elementFromPoint(x,y);
     const target=hit?.closest?.('#grid.shelfMode .card');
     if(!target||target===s.card||target.parentElement!==s.grid)return;
+
     const cards=[...s.grid.querySelectorAll('.card')];
     const from=cards.indexOf(s.card),to=cards.indexOf(target);
     if(from<0||to<0)return;
     if(to<from)s.grid.insertBefore(s.card,target);
     else s.grid.insertBefore(s.card,target.nextSibling);
   }
-  function finishShelfGesture(saveOrder){
-    const s=shelfGesture;if(!s)return;
+
+  function beginShelfGesture(cover,x,y,source,id){
+    if(viewMode!=='shelf'||arrangeMode!=='manual')return;
+    const card=cover?.closest('.card'),grid=card?.parentElement;
+    if(!card||!grid)return;
+
     clearShelfTimer();
+    shelfGesture={
+      source,id,cover,card,grid,startX:x,startY:y,lastX:x,lastY:y,
+      active:false,timer:null,ghost:null,offsetX:0,offsetY:0
+    };
+
+    shelfGesture.timer=setTimeout(()=>{
+      const s=shelfGesture;
+      if(!s||s.source!==source||s.id!==id||arrangeMode!=='manual')return;
+      ensureShelfOrders();
+      s.active=true;
+      window.__mwlShelfSuppressClickUntil=Date.now()+1500;
+      const rect=s.cover.getBoundingClientRect();
+      s.offsetX=s.lastX-rect.left;
+      s.offsetY=s.lastY-rect.top;
+      const ghost=s.cover.cloneNode(true);
+      ghost.classList.add('shelfDragGhost');
+      Object.assign(ghost.style,{
+        left:rect.left+'px',top:rect.top+'px',
+        width:rect.width+'px',height:rect.height+'px'
+      });
+      document.body.appendChild(ghost);
+      s.ghost=ghost;
+      s.card.classList.add('shelfDragging');
+      document.body.classList.add('shelfReordering');
+      try{navigator.vibrate?.(35)}catch(_){}
+    },420);
+  }
+
+  function finishShelfGesture(commit){
+    const s=shelfGesture;
+    if(!s)return;
+    clearShelfTimer();
+
     if(s.active){
       window.__mwlShelfSuppressClickUntil=Date.now()+1000;
       document.body.classList.remove('shelfReordering');
       s.card?.classList.remove('shelfDragging');
       s.ghost?.remove();
-      if(saveOrder&&s.grid){
+
+      if(commit&&s.grid){
         ensureShelfOrders();
-        const ids=[...s.grid.querySelectorAll('.card[data-book-id]')].map(x=>x.dataset.bookId).filter(Boolean);
+        const ids=[...s.grid.querySelectorAll('.card[data-book-id]')]
+          .map(x=>x.dataset.bookId).filter(Boolean);
         const visible=ids.map(id=>books.find(b=>String(b.id)===String(id))).filter(Boolean);
         const slots=visible.map(b=>Number(b.shelfOrder)).sort((a,b)=>a-b);
         visible.forEach((b,i)=>{b.shelfOrder=slots[i]});
+
+        sortMode='shelf';
+        localStorage.setItem(SORT_KEY,sortMode);
         save();
         note('책장 순서를 저장했습니다');
       }
@@ -314,50 +367,80 @@
     shelfGesture=null;
   }
 
-  // Android WebView에서는 touch 이벤트를 우선 사용합니다.
+  function touchById(list,id){
+    for(const t of list||[])if(t.identifier===id)return t;
+    return null;
+  }
+
+  // Android/Samsung WebView에서는 touch 이벤트를 직접 사용합니다.
   document.addEventListener('touchstart',e=>{
-    if(!manualShelf||viewMode!=='shelf'||e.touches.length!==1)return;
-    const cover=e.target.closest('#grid.shelfMode .card .cover');if(!cover)return;
-    const card=cover.closest('.card'),grid=card?.parentElement;if(!card||!grid)return;
-    const p=shelfPointFromTouch(e);if(!p)return;
-    startShelfGesture(cover,card,grid,p.x,p.y,p.id,'touch');
+    if(viewMode!=='shelf'||arrangeMode!=='manual'||e.touches.length!==1)return;
+    const cover=e.target.closest('#grid.shelfMode .card .cover');
+    if(!cover)return;
+    const t=e.changedTouches[0];
+    beginShelfGesture(cover,t.clientX,t.clientY,'touch',t.identifier);
   },{capture:true,passive:true});
 
   document.addEventListener('touchmove',e=>{
-    const s=shelfGesture;if(!s||s.kind!=='touch')return;
-    const p=shelfPointFromTouch(e);if(!p)return;
-    if(s.active&&e.cancelable)e.preventDefault();
-    moveShelfGesture(p.x,p.y);
+    const s=shelfGesture;
+    if(!s||s.source!=='touch')return;
+    const t=touchById(e.touches,s.id);
+    if(!t)return;
+    const moved=Math.hypot(t.clientX-s.startX,t.clientY-s.startY);
+    s.lastX=t.clientX;s.lastY=t.clientY;
+    if(!s.active){
+      if(moved>10){clearShelfTimer();shelfGesture=null}
+      return;
+    }
+    if(e.cancelable)e.preventDefault();
+    coordsMove(t.clientX,t.clientY);
   },{capture:true,passive:false});
 
   document.addEventListener('touchend',e=>{
-    const s=shelfGesture;if(!s||s.kind!=='touch')return;
+    const s=shelfGesture;
+    if(!s||s.source!=='touch')return;
+    const t=touchById(e.changedTouches,s.id);
+    if(!t)return;
+    if(s.active&&e.cancelable)e.preventDefault();
     finishShelfGesture(true);
-  },true);
+  },{capture:true,passive:false});
+
   document.addEventListener('touchcancel',e=>{
-    const s=shelfGesture;if(!s||s.kind!=='touch')return;
+    const s=shelfGesture;
+    if(!s||s.source!=='touch')return;
     finishShelfGesture(false);
+  },{capture:true,passive:false});
+
+  // PC에서는 마우스를 길게 누른 뒤 드래그합니다.
+  document.addEventListener('mousedown',e=>{
+    if(viewMode!=='shelf'||arrangeMode!=='manual'||e.button!==0)return;
+    const cover=e.target.closest('#grid.shelfMode .card .cover');
+    if(!cover)return;
+    beginShelfGesture(cover,e.clientX,e.clientY,'mouse',1);
   },true);
 
-  // PC/마우스도 동일하게 지원합니다.
-  document.addEventListener('mousedown',e=>{
-    if(!manualShelf||viewMode!=='shelf'||e.button!==0)return;
-    const cover=e.target.closest('#grid.shelfMode .card .cover');if(!cover)return;
-    const card=cover.closest('.card'),grid=card?.parentElement;if(!card||!grid)return;
-    startShelfGesture(cover,card,grid,e.clientX,e.clientY,'mouse','mouse');
-  },true);
   document.addEventListener('mousemove',e=>{
-    const s=shelfGesture;if(!s||s.kind!=='mouse')return;
-    if(s.active&&e.cancelable)e.preventDefault();
-    moveShelfGesture(e.clientX,e.clientY);
+    const s=shelfGesture;
+    if(!s||s.source!=='mouse')return;
+    const moved=Math.hypot(e.clientX-s.startX,e.clientY-s.startY);
+    s.lastX=e.clientX;s.lastY=e.clientY;
+    if(!s.active){
+      if(moved>8){clearShelfTimer();shelfGesture=null}
+      return;
+    }
+    e.preventDefault();
+    coordsMove(e.clientX,e.clientY);
   },true);
+
   document.addEventListener('mouseup',e=>{
-    const s=shelfGesture;if(!s||s.kind!=='mouse')return;
+    const s=shelfGesture;
+    if(!s||s.source!=='mouse')return;
+    if(s.active)e.preventDefault();
     finishShelfGesture(true);
   },true);
 
   document.addEventListener('contextmenu',e=>{
-    if(e.target.closest('#grid.shelfMode .card .cover'))e.preventDefault();
+    if(arrangeMode==='manual'&&e.target.closest('#grid.shelfMode .card .cover'))e.preventDefault();
   },true);
 
   window.render=render;
