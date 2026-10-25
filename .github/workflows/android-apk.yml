@@ -13,6 +13,8 @@ on:
       - "patch-v29.js"
       - "patch-v11.js"
       - "app-v20.html"
+      - "commercial-cover-studio.js"
+      - "cover-art/**"
       - "sw.js"
       - "manifest.webmanifest"
       - "library-icon-v48.webp"
@@ -37,6 +39,11 @@ jobs:
         run: |
           node --check patch-v11.js
           node --check patch-v29.js
+          node --check sw.js
+          node --check commercial-cover-studio.js
+          count=$(find cover-art -maxdepth 1 -type f -name '*.webp' | wc -l)
+          test "$count" -eq 101
+          grep -Fq 'commercial-cover-studio.js?v=494' app-v20.html
 
       - name: Probe cover resolver (public test work)
         continue-on-error: true
