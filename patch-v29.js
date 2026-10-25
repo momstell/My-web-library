@@ -143,7 +143,7 @@
         else{
           image.style.display="";
           if(image.complete&&image.naturalWidth&&looksPlaceholder(image))fallback();
-          else if(!image.complete)image.addEventListener("load",()=>{if(looksPlaceholder(image))fallback()},{once:true});
+          else if(!image.complete)image.addEventListener("load",()=>{if(looksPlaceholder(image)){fallback();if(!b.coverManual)setTimeout(()=>repair(b,false),600)}},{once:true});
         }
         if(!b.coverManual&&(!image||bad(b.cover)||cover.dataset.fallback==="yes")){
           const key=b.id+"|"+String(b.cover||"").slice(0,35);
