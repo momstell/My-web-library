@@ -11,6 +11,7 @@ on:
       - "patch-v27.js"
       - "patch-v28.js"
       - "patch-v29.js"
+      - "patch-v11.js"
       - "app-v20.html"
       - "sw.js"
       - "manifest.webmanifest"
@@ -33,7 +34,9 @@ jobs:
           gradle-version: "8.9"
 
       - name: Validate updated browser JavaScript
-        run: node --check patch-v29.js
+        run: |
+          node --check patch-v11.js
+          node --check patch-v29.js
 
       - name: Probe cover resolver (public test work)
         continue-on-error: true
@@ -57,5 +60,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-web-library-v4.9.1-debug
+          name: my-web-library-v4.9.3-photo-picker-debug
           path: android-wrapper/app/build/outputs/apk/debug/app-debug.apk
