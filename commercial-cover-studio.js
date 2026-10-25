@@ -55,6 +55,63 @@ const rows=[
   ["couple","서울의 저녁, 서로의 온기","설렘","다양한 인물","div",4,0],
   ["couple","낯선 왕국의 두 사람","강한 서사","로맨스판타지·다양한 인물","div",5,0]
 ];
+// 50 additional original covers for the 100-cover expansion.
+rows.push(
+  // 20 additional male leads (catalogue total: 40)
+  ["male","옥상 위의 반항아","반항아","학원물·스쿨룩·캠퍼스","new",0,0],
+  ["male","검은 라운지의 수장","위험한 매력","조직·느와르·현대 로맨스","new",1,0],
+  ["male","교복 대신 바시티 재킷","청량","학원물·스쿨룩·캠퍼스","new",2,0],
+  ["male","호텔의 야간 지배인","우아","호텔리어·현대 로맨스","new",3,0],
+  ["male","응급실의 다정한 의사","다정","의료·현대 로맨스","new",4,0],
+  ["male","코드네임 블루","과묵","특임대·스파이","new",5,0],
+  ["male","파도를 지휘하는 장교","냉미남","해군·밀리터리","new",6,0],
+  ["male","제복의 귀환","묵직함","군복·밀리터리","new",7,0],
+  ["male","자정의 파티 초대장","섹시","파티룩·현대 로맨스","new",8,0],
+  ["male","재벌가의 문제적 후계자","도도","조직·현대 로맨스","new",9,0],
+  ["male","피아노에 머문 밤","감성","파티룩·현대 로맨스","new",10,0],
+  ["male","통통한 제빵사의 고백","포근","다양한 체형·현대 로맨스","new",11,0],
+  ["male","비단 도포의 선비","과묵","궁중·조선·한복","new",12,0],
+  ["male","호텔 로비의 외교관","지적","호텔리어·다양한 인물","new",13,0],
+  ["male","밤의 미술관 큐레이터","우아","직업·다양한 인물","new",14,0],
+  ["male","완벽한 셰프의 비밀","섹시","직업·현대 로맨스","new",15,0],
+  ["male","사건 현장의 형사","과묵","수사·현대 로맨스","new",16,0],
+  ["male","비행운을 쫓는 파일럿","청량","직업·현대 로맨스","new",17,0],
+  ["male","교무실의 젊은 선생님","다정","학원물·직업·현대 로맨스","new",18,0],
+  ["male","매트리스 위의 눈빛","몽환","현대 로맨스","new",19,0],
+  // 15 additional female leads (catalogue total: 30)
+  ["female","붉은 드레스의 승부사","당찬","파티룩·현대 로맨스","new",20,0],
+  ["female","호텔의 총지배인","우아","호텔리어·현대 로맨스","new",21,0],
+  ["female","암호명 라일락","과묵","스파이·특임대","new",22,0],
+  ["female","비밀을 쥔 궁녀","도도","궁중·조선·한복","new",23,0],
+  ["female","하얀 가운의 외과의","당찬","의료·직업","new",24,0],
+  ["female","캠퍼스의 늦은 오후","청순","학원물·스쿨룩·캠퍼스","new",25,0],
+  ["female","통통한 디자이너의 계절","귀여움","다양한 체형·현대 로맨스","new",26,0],
+  ["female","재즈가 흐르는 파티","섹시","파티룩·다양한 인물","new",27,0],
+  ["female","은빛 영애의 무도회","우아","로맨스판타지·파티룩","new",28,0],
+  ["female","함교 위의 해군 장교","냉미녀","해군·밀리터리","new",29,0],
+  ["female","특임대 팀장 강서윤","과묵","특임대·밀리터리","new",30,0],
+  ["female","첫눈 오는 날의 담임","다정","학원물·직업·현대 로맨스","new",31,0],
+  ["female","조직의 후계자","도도","조직·느와르","new",32,0],
+  ["female","호텔 컨시어지의 미소","청량","호텔리어·다양한 인물","new",33,0],
+  ["female","밤을 달리는 밴드 보컬","반항아","학원물·캠퍼스·다양한 인물","new",34,0],
+  // 15 additional couples and family covers (catalogue total: 30)
+  ["couple","워커홀릭 앙숙의 야근","앙숙·설렘","오피스·현대 로맨스·앙숙","new",35,0],
+  ["couple","가면무도회의 약속","강한 서사","파티룩·로맨스판타지","new",36,0],
+  ["couple","호텔 스위트룸의 비밀","섹시","호텔리어·현대 로맨스","new",37,0],
+  ["couple","서로를 겨눈 두 사람","긴장감","조직·느와르·현대 로맨스","new",38,0],
+  ["couple","작전명: 한밤의 파트너","강한 서사","스파이·특임대","new",39,0],
+  ["couple","파도 위의 귀환","설렘","해군·밀리터리·현대 로맨스","new",40,0],
+  ["couple","당직실에 남은 두 의사","다정","의료·현대 로맨스","new",41,0],
+  ["couple","비단 장막 너머의 서약","궁중 암투","궁중·조선·한복","new",42,0],
+  ["couple","마차에서 내린 세 사람","가족","아이·가족·궁중","new",43,0],
+  ["couple","유치원 앞 작은 손","포근","아이·가족·현대 로맨스","new",44,0],
+  ["couple","우리 둘의 포근한 계절","포근","다양한 체형·현대 로맨스","new",45,0],
+  ["couple","서울의 밤, 서로의 편","설렘","다양한 인물·현대 로맨스","new",46,0],
+  ["couple","백야의 무도회","우아","다양한 인물·파티룩","new",47,0],
+  ["couple","호텔리어와 단골 손님","청량","호텔리어·현대 로맨스","new",48,0],
+  ["couple","꼬마 손님과 수의사의 하루","다정","아이·가족·다양한 인물","new",49,0]
+);
+rows.push(["couple","레인 끝에서 만난 승부사들","청량·설렘","스포츠·수영·테니스·현대 로맨스","sports",0,0]);
 const sources={
   s1:"exec-dae66234-ff3a-4577-b73a-9b1212322796.png",
   s2:"exec-51f60eb0-1f6e-4b3d-a852-ff132540dbd0.png",
@@ -69,6 +126,7 @@ const sources={
   div:"exec-8cfd8194-f5e4-4126-a99e-974e930dd6a3.png"
 };
 const all=rows.map((r,i)=>({id:i+1,group:r[0],name:r[1],mood:r[2],genre:r[3],image:`./cover-art/${String(i+1).padStart(2,"0")}.webp`,featured:!!r[6]}));
+const groupCount=key=>all.filter(x=>x.group===key).length;
 const esc=v=>String(v||"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
 const style=document.createElement("style");style.textContent=`
 .comDemo{margin:10px 0 16px;border:1px solid #eadcf0;border-radius:16px;padding:12px 14px;background:linear-gradient(120deg,#fff8fc,#f5f2ff);color:#655070;font-size:12px;line-height:1.55}
@@ -80,11 +138,12 @@ const style=document.createElement("style");style.textContent=`
 #comStudio .x{border:0;background:#eeeaf2;border-radius:100%;width:34px;height:34px;font-size:22px}
 #comStudio .cols{display:grid;grid-template-columns:minmax(0,1fr) 245px;height:min(720px,calc(94vh - 116px))}
 #comStudio .browse{padding:12px;overflow-y:auto}
-#comStudio .tabs,#comStudio .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+#comStudio .tabs,#comStudio .filters{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;margin-bottom:10px;padding-bottom:3px;scrollbar-width:thin}
 #comStudio .tab,#comStudio .filter{font-size:12px;border:1px solid #ddd5e5;padding:8px 10px;border-radius:10px;background:white;color:#5b5070;font-weight:750}
 #comStudio .filter{font-size:10px;padding:6px 9px;border-radius:99px}
 #comStudio .tab.on,#comStudio .filter.on{background:#68488c;color:white;border-color:#68488c}
 #comStudio .filterLabel{font-size:10px;font-weight:900;color:#91869b;margin:10px 2px 6px}
+#comStudio .search{width:100%;box-sizing:border-box;border:1px solid #ddd5e5;border-radius:10px;padding:9px 11px;margin:2px 0 10px;font-size:12px;color:#453b4d}
 #comStudio .list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
 #comStudio .item{border:2px solid transparent;border-radius:11px;padding:3px;background:none;text-align:left;min-width:0}
 #comStudio .item.on{border-color:#8861c8;background:#f2eaff}
@@ -102,28 +161,28 @@ const style=document.createElement("style");style.textContent=`
 @media(max-width:680px){#comStudio .cols{grid-template-columns:1fr;height:min(82vh,760px);overflow-y:auto}#comStudio .browse{padding:8px;overflow:visible}#comStudio .list{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}#comStudio .preview{display:grid;grid-template-columns:92px 1fr;align-items:center;gap:8px;border-left:0;border-top:1px solid #eae0f0;padding:9px 12px}#comStudio .comTargetLabel{grid-column:1/-1}#comStudio .comTarget{grid-column:1/-1}#comStudio .preview img{grid-row:3/6;width:92px}#comStudio .preview .desc{align-self:end}#comStudio .apply{align-self:start;font-size:11px;padding:10px 4px}#comStudio .foot{font-size:9px}#comStudio h3{font-size:17px}}
 `;document.head.appendChild(style);
 const main=document.querySelector("main.main")||document.querySelector(".main");
-const ribbon=document.createElement("div");ribbon.className="comDemo";ribbon.textContent="📚 표지 고르는 재미까지 담은 50종 캐릭터 스튜디오 · 남자 20 · 여자 15 · 커플·가족 15";
+const ribbon=document.createElement("div");ribbon.className="comDemo";ribbon.textContent=`📚 오리지널 캐릭터 표지 ${all.length}종 · 남자 ${groupCount("male")} · 여자 ${groupCount("female")} · 커플·가족 ${groupCount("couple")}`;
 main?.insertAdjacentElement("afterbegin",ribbon);
 const button=document.createElement("button");button.type="button";button.className="comBtn";button.textContent="🎨 캐릭터 표지 고르기";
 ribbon.insertAdjacentElement("afterend",button);
 const cloud=document.getElementById("cloudBar");if(cloud)cloud.style.display="none";
 const d=document.createElement("dialog");d.id="comStudio";
-d.innerHTML=`<div class="top"><div><h3>캐릭터 표지 스튜디오 · 50종</h3><div class="intro">표정을 보고, 분위기를 고르고, 책장에 직접 꽂아 보세요.</div></div><button class="x" type="button" aria-label="닫기">×</button></div>
-<div class="cols"><div class="browse"><div class="tabs"><button type="button" class="tab on" data-mode="all">전체 50</button><button type="button" class="tab" data-mode="male">남자 20</button><button type="button" class="tab" data-mode="female">여자 15</button><button type="button" class="tab" data-mode="couple">커플·가족 15</button><button type="button" class="tab" data-mode="mine">내 이미지</button></div>
-<div id="comReady"><div class="filterLabel">먼저 만나볼 12종</div><div class="filters featuredFilters"><button type="button" class="filter on" data-feature="all">전체 보기</button><button type="button" class="filter" data-feature="featured">추천 12종</button></div><div class="filterLabel">분위기</div><div class="filters moods"></div><div class="filterLabel">장르·테마</div><div class="filters genres"></div><div class="list"></div></div>
+d.innerHTML=`<div class="top"><div><h3>캐릭터 표지 스튜디오 · ${all.length}종</h3><div class="intro">표정을 보고, 분위기를 고르고, 책장에 직접 꽂아 보세요.</div></div><button class="x" type="button" aria-label="닫기">×</button></div>
+<div class="cols"><div class="browse"><div class="tabs"><button type="button" class="tab on" data-mode="all">전체 ${all.length}</button><button type="button" class="tab" data-mode="male">남자 ${groupCount("male")}</button><button type="button" class="tab" data-mode="female">여자 ${groupCount("female")}</button><button type="button" class="tab" data-mode="couple">커플·가족 ${groupCount("couple")}</button><button type="button" class="tab" data-mode="mine">내 이미지</button></div>
+<div id="comReady"><input class="search" type="search" placeholder="표지명·분위기·장르·의상 검색" aria-label="표지 검색"><div class="filterLabel">먼저 만나볼 12종</div><div class="filters featuredFilters"><button type="button" class="filter on" data-feature="all">전체 보기</button><button type="button" class="filter" data-feature="featured">추천 12종</button></div><div class="filterLabel">분위기</div><div class="filters moods"></div><div class="filterLabel">장르·테마·의상</div><div class="filters genres"></div><div class="list"></div></div>
 <div id="comMine" hidden><div class="upload">휴대전화 사진으로 나만의 표지를 등록할 수 있어요.<p><button class="pick" type="button">사진 선택하기</button><input type="file" id="comFile" accept="image/*" hidden></p><small>등록한 사진의 권리는 이용자가 확인합니다.</small></div></div></div>
 <div class="preview"><label class="comTargetLabel" for="comTarget">표지를 적용할 작품</label><select id="comTarget" class="comTarget"></select><img id="comPreview" alt="표지 미리보기"><div class="desc" id="comDesc"></div><button type="button" class="apply">이 표지 저장</button></div></div>
 <div class="foot">오리지널 캐릭터 일러스트 · 원작 작품이나 캐릭터를 복제하지 않은 앱 전용 샘플</div>`;
 document.body.appendChild(d);
 const q=s=>d.querySelector(s),listGrid=q(".list");
-let selected=all[0],mode="all",mood="전체",genre="전체",featuredOnly=false,targetId="",own="",previewSeq=0,usingForm=false;
+let selected=all[0],mode="all",mood="전체",genre="전체",searchTerm="",featuredOnly=false,targetId="",own="",previewSeq=0,usingForm=false;
 function currentBook(){return books.find(x=>String(x.id)===String(targetId))||null;}
 function titleAndAuthor(){const b=currentBook();return [usingForm?document.querySelector("#title")?.value.trim()||b?.title||"나만의 소장도서":b?.title||"나만의 소장도서",usingForm?document.querySelector("#author")?.value.trim()||b?.author||"MY LIBRARY":b?.author||"MY LIBRARY"]}
 function wrapTitle(ctx,title,maxWidth){const words=Array.from(String(title||"나만의 소장도서"));const lines=[];let line="";for(const ch of words){if(line&&ctx.measureText(line+ch).width>maxWidth){lines.push(line);line=ch}else line+=ch}if(line)lines.push(line);if(lines.length>2){lines[1]=lines.slice(1).join("").slice(0,10)+"…";lines.length=2}return lines}
 function completedCover(t,title,author){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{try{const c=document.createElement("canvas");c.width=480;c.height=720;const ctx=c.getContext("2d");ctx.drawImage(img,0,0,c.width,c.height);const g=ctx.createLinearGradient(0,390,0,720);g.addColorStop(0,"rgba(17,14,28,0)");g.addColorStop(.36,"rgba(17,14,28,.67)");g.addColorStop(1,"rgba(17,14,28,.94)");ctx.fillStyle=g;ctx.fillRect(0,360,480,360);ctx.textAlign="center";ctx.fillStyle="#f6dfb0";ctx.font="700 18px 'Noto Sans KR',sans-serif";ctx.fillText(t.genre.toUpperCase(),240,493);ctx.fillStyle="#fff";ctx.font=`800 ${String(title).length>15?32:40}px 'Noto Sans KR',sans-serif`;const lines=wrapTitle(ctx,title,410),start=lines.length>1?555:572;lines.forEach((line,i)=>ctx.fillText(line,240,start+i*48));ctx.fillStyle="#e5c889";ctx.fillRect(174,640,132,2);ctx.fillStyle="#f6f2ee";ctx.font="500 18px 'Noto Sans KR',sans-serif";ctx.fillText(String(author||"MY LIBRARY").slice(0,22),240,679);resolve(c.toDataURL("image/webp",.88))}catch(e){reject(e)}};img.onerror=()=>reject(new Error("cover art load"));img.src=t.image})}
 async function preview(){const seq=++previewSeq;const [title,author]=titleAndAuthor();try{const src=mode==="mine"&&own?own:await completedCover(selected,title,author);if(seq!==previewSeq)return;q("#comPreview").src=src;q("#comDesc").textContent=mode==="mine"?(own?"내가 선택한 사진":"사진을 선택해주세요"):`${String(selected.id).padStart(2,"0")} · ${selected.group==="male"?"남자":selected.group==="female"?"여자":"커플·가족"} · ${selected.mood} · ${selected.genre}`}catch{q("#comDesc").textContent="표지 미리보기를 불러오지 못했습니다"}}
 function activeGroup(){return mode==="male"||mode==="female"||mode==="couple"?mode:null}
-function filtered(){return all.filter(t=>(!activeGroup()||t.group===activeGroup())&&(!featuredOnly||t.featured)&&(mood==="전체"||t.mood===mood)&&(genre==="전체"||t.genre.split("·").some(x=>x===genre)||t.genre===genre))}
+function filtered(){return all.filter(t=>(!activeGroup()||t.group===activeGroup())&&(!featuredOnly||t.featured)&&(mood==="전체"||t.mood===mood)&&(genre==="전체"||t.genre.split("·").some(x=>x.trim()===genre)||t.genre===genre)&&(!searchTerm||`${t.name} ${t.mood} ${t.genre}`.toLowerCase().includes(searchTerm)))}
 function buildChips(kind){const host=q(kind==="mood"?".moods":".genres");host.replaceChildren();const group=activeGroup(),pool=all.filter(x=>!group||x.group===group),values=["전체",...new Set(pool.flatMap(x=>kind==="mood"?[x.mood]:x.genre.split("·").map(v=>v.trim())))];for(const value of values){const b=document.createElement("button");b.type="button";b.className="filter"+((kind==="mood"?mood:genre)===value?" on":"");b.textContent=value;b.onclick=()=>{if(kind==="mood")mood=value;else genre=value;buildChips(kind);showGrid()};host.append(b)}}
 function showGrid(){const top=listGrid.scrollTop,items=filtered();listGrid.replaceChildren();if(items.length&&!items.some(x=>x.id===selected.id)){selected=items[0];preview()}for(const t of items){const b=document.createElement("button");b.type="button";b.className="item"+(t.id===selected.id&&mode!=="mine"?" on":"");const img=document.createElement("img");img.loading="lazy";img.alt=t.name;img.src=t.image;const name=document.createElement("small");name.textContent=String(t.id).padStart(2,"0")+" · "+t.name;const tag=document.createElement("em");tag.textContent=t.mood+" · "+t.genre;b.append(img,name,tag);b.onclick=()=>{selected=t;showGrid();preview()};listGrid.append(b)}if(!listGrid.children.length){const empty=document.createElement("p");empty.textContent="이 조건에 맞는 표지가 없습니다.";empty.style.cssText="grid-column:1/-1;text-align:center;color:#8a8190;padding:24px";listGrid.append(empty)}listGrid.scrollTop=top}
 function setMode(v){mode=v;d.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.dataset.mode===v));q("#comReady").hidden=v==="mine";q("#comMine").hidden=v!=="mine";if(v!=="mine"){mood="전체";genre="전체";featuredOnly=false;q('[data-feature="all"]').classList.add("on");q('[data-feature="featured"]').classList.remove("on");buildChips("mood");buildChips("genre");showGrid()}preview()}
@@ -134,8 +193,9 @@ function imageData(src){return new Promise((resolve,reject)=>{const im=new Image
 ownInput.onchange=async()=>{const file=ownInput.files?.[0];if(!file)return;const url=URL.createObjectURL(file);try{own=await imageData(url);preview()}catch{note("사진을 불러올 수 없습니다. JPG·PNG를 선택해주세요.")}finally{URL.revokeObjectURL(url);ownInput.value=""}};
 let busy=false;
 q(".apply").onclick=async()=>{if(busy)return;if(mode==="mine"&&!own){note("먼저 사진을 선택해주세요");return}busy=true;const b=q(".apply");b.disabled=true;b.textContent="저장 중…";try{const [title,author]=titleAndAuthor();const raster=mode==="mine"?own:await completedCover(selected,title,author);const input=document.getElementById("cover");if(input){input.value=raster;input.dataset.manual="1";input.dataset.coverSource=mode==="mine"?"user-upload":"character-template";input.dataset.coverTemplateId=mode==="mine"?"":String(selected.id);input.dataset.coverCategory=mode==="mine"?"":selected.group;input.dispatchEvent(new Event("change",{bubbles:true}))}const item=currentBook();if(item){item.cover=raster;item.coverManual=true;item.coverSource=mode==="mine"?"user-upload":"character-template";item.coverTemplateId=mode==="mine"?null:selected.id;item.coverCategory=mode==="mine"?null:selected.group;item.coverMood=mode==="mine"?null:selected.mood;item.coverGenre=mode==="mine"?null:selected.genre;item.updatedAt=new Date().toISOString();save();note("책장에 표지가 저장됐어요") }else note("표지를 골랐어요. 작품 등록창에서 저장을 눌러주세요.");d.close()}catch(e){note("이미지 저장을 완료하지 못했습니다.")}finally{busy=false;b.disabled=false;b.textContent="이 표지 저장"}};
-function open(id="",fromForm=false){usingForm=fromForm;targetId=fromForm?String(id||""):"";const selector=q("#comTarget");selector.replaceChildren(new Option(fromForm&&!id?"새 작품 등록 중":"작품 선택",""));if(!fromForm){for(const b of list())selector.appendChild(new Option(b.title||"제목 없음",String(b.id)));if(!targetId&&selector.options.length>1)targetId=selector.options[1].value}else if(id){const b=books.find(x=>String(x.id)===String(id));if(b)selector.appendChild(new Option(b.title||"제목 없음",String(b.id)))}selector.value=targetId;selector.disabled=fromForm;own="";mood="전체";genre="전체";featuredOnly=false;selected=all.find(t=>t.id===(currentBook()?.coverTemplateId||1))||all[0];q('[data-feature="all"]').classList.add("on");q('[data-feature="featured"]').classList.remove("on");buildChips("mood");buildChips("genre");showGrid();setMode("all");if(!d.open)d.showModal()}
+function open(id="",fromForm=false){usingForm=fromForm;targetId=fromForm?String(id||""):"";const selector=q("#comTarget");selector.replaceChildren(new Option(fromForm&&!id?"새 작품 등록 중":"작품 선택",""));if(!fromForm){for(const b of list())selector.appendChild(new Option(b.title||"제목 없음",String(b.id)));if(!targetId&&selector.options.length>1)targetId=selector.options[1].value}else if(id){const b=books.find(x=>String(x.id)===String(id));if(b)selector.appendChild(new Option(b.title||"제목 없음",String(b.id)))}selector.value=targetId;selector.disabled=fromForm;own="";mood="전체";genre="전체";searchTerm="";q(".search").value="";featuredOnly=false;selected=all.find(t=>t.id===(currentBook()?.coverTemplateId||1))||all[0];q('[data-feature="all"]').classList.add("on");q('[data-feature="featured"]').classList.remove("on");buildChips("mood");buildChips("genre");showGrid();setMode("all");if(!d.open)d.showModal()}
 q("#comTarget").onchange=e=>{targetId=e.target.value;preview()};button.onclick=()=>open("",false);
+q(".search").oninput=e=>{searchTerm=e.target.value.trim().toLowerCase();showGrid()};
 document.querySelector("#title")?.addEventListener("input",()=>{if(d.open&&usingForm)preview()});document.querySelector("#author")?.addEventListener("input",()=>{if(d.open&&usingForm)preview()});
 const picker=document.querySelector("#coverPicker .coverPickActions");if(picker){const add=document.createElement("button");add.type="button";add.className="coverPickBtn";add.textContent="🎨 캐릭터 표지";picker.prepend(add);add.onclick=()=>open(document.getElementById("id")?.value||"",true)}
 const form=document.querySelector("#form");form?.addEventListener("submit",()=>setTimeout(()=>{const source=document.querySelector("#cover")?.dataset||{};const t=source.coverTemplateId;if(!t)return;const title=document.querySelector("#title")?.value.trim()||"",author=document.querySelector("#author")?.value.trim()||"";const b=[...books].reverse().find(x=>x.title===title&&String(x.author||"")===author);if(!b)return;b.coverSource="character-template";b.coverTemplateId=Number(t);b.coverCategory=source.coverCategory||"";b.coverMood=all.find(x=>x.id===Number(t))?.mood||"";b.coverGenre=all.find(x=>x.id===Number(t))?.genre||"";localStorage.setItem(KEY,JSON.stringify(books));document.querySelector("#cover").dataset.coverTemplateId=""},0));
