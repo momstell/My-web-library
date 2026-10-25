@@ -1,8 +1,11 @@
 (() => {
   const VIEW_KEY='mwl_view_v22';
   const SORT_KEY='mwl_sort_v22';
+  const MANUAL_KEY='mwl_manual_shelf_v32';
   let viewMode=localStorage.getItem(VIEW_KEY)||'list';
   let sortMode=localStorage.getItem(SORT_KEY)||'recent';
+  if(sortMode==='shelf') sortMode='recent';
+  let manualShelf=localStorage.getItem(MANUAL_KEY)==='1';
 
   // 큰 통계 카드와 긴 안내 박스는 숨기고, 필요한 정보만 한 줄 요약으로 대체합니다.
   const stats=document.querySelector('.stats');
@@ -24,6 +27,13 @@
     .viewBtn{border:0;background:transparent;color:#777d89;border-radius:8px;padding:7px 9px;font-size:11px;font-weight:850;white-space:nowrap}
     .viewBtn.on{background:#fff;color:#1d202d;box-shadow:0 1px 5px rgba(24,27,40,.08)}
     .sortSelect{height:34px;border:1px solid #e0e2ea;background:#fff;color:#555b68;border-radius:10px;padding:0 8px;font-size:11px;font-weight:750;outline:none}
+    .sortSelect:disabled{opacity:.48;background:#f2f3f7}
+    .manualShelfControl{display:none;align-items:center;gap:7px;font-size:10px;font-weight:850;color:#666c78;white-space:nowrap}
+    .manualShelfControl.show{display:flex}
+    .shelfSwitch{width:42px;height:24px;border:0;border-radius:999px;background:#d7dae3;padding:3px;position:relative;transition:.18s;box-shadow:inset 0 1px 2px rgba(0,0,0,.08)}
+    .shelfSwitch i{display:block;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.20);transition:.18s}
+    .shelfSwitch.on{background:#6b58ef}
+    .shelfSwitch.on i{transform:translateX(18px)}
     .shelfHint{display:none;color:#9297a3;font-size:10px;margin:6px 1px 2px}
     .toolbar{margin-top:12px}
     #ratingFilters{margin-top:7px}
@@ -75,8 +85,11 @@
         <button class="viewBtn" data-view="list">☰ 리스트</button>
         <button class="viewBtn" data-view="shelf">▦ 책장</button>
       </div>
-      <select class="sortSelect" id="sortSelect" aria-label="정렬">
-        <option value="shelf">내 책장순</option>
+      <div class="manualShelfControl" id="manualShelfControl">
+        <span>직접 정렬</span>
+        <button type="button" class="shelfSwitch" id="manualShelfToggle" role="switch" aria-checked="false"><i></i></button>
+      </div>
+      <select class="sortSelect" id="sortSelect" aria-label="자동 정렬">
         <option value="recent">최근 등록순</option>
         <option value="rating">만족도 높은순</option>
         <option value="title">작품명순</option>
@@ -92,7 +105,7 @@
   const hint=document.createElement('div');
   hint.id='shelfHint';
   hint.className='shelfHint';
-  hint.textContent='가볍게 탭하면 작품페이지 · 길게 눌러 드래그하면 책장 순서를 바꿀 수 있습니다.';
+  hint.textContent='가볍게 탭하면 작품페이지로 이동합니다.';
   const titlebar=document.querySelector('.titlebar');
   if(titlebar) titlebar.insertAdjacentElement('beforebegin',hint);
 
@@ -101,7 +114,7 @@
   list=function(){
     const arr=[...listBefore22()];
     const txt=v=>String(v||'').trim();
-    if(sortMode==='shelf'){
+    if(viewMode==='shelf' && manualShelf){
       ensureShelfOrders();
       arr.sort((a,b)=>(Number(a.shelfOrder??999999)-Number(b.shelfOrder??999999))||String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
     }
@@ -143,6 +156,21 @@
       sortMode=sortSelect.value;
       localStorage.setItem(SORT_KEY,sortMode);
       render();
+    });
+  }
+  const manualToggle=document.querySelector('#manualShelfToggle');
+  if(manualToggle){
+    manualToggle.addEventListener('click',()=>{
+      manualShelf=!manualShelf;
+      localStorage.setItem(MANUAL_KEY,manualShelf?'1':'0');
+      if(manualShelf){
+        ensureShelfOrders();
+        save();
+        note('직접 정렬을 켰습니다 · 표지를 길게 눌러 이동하세요');
+      }else{
+        render();
+        note('직접 정렬을 껐습니다 · 자동 정렬을 사용합니다');
+      }
     });
   }
 
@@ -188,7 +216,25 @@
       });
     }
     document.querySelectorAll('.viewBtn').forEach(x=>x.classList.toggle('on',x.dataset.view===viewMode));
-    const sh=document.querySelector('#shelfHint');if(sh)sh.classList.toggle('show',viewMode==='shelf');
+    const sh=document.querySelector('#shelfHint');
+    if(sh){
+      sh.classList.toggle('show',viewMode==='shelf');
+      sh.textContent=manualShelf
+        ? '가볍게 탭하면 작품페이지 · 길게 눌러 드래그하면 순서를 바꿀 수 있습니다.'
+        : '가볍게 탭하면 작품페이지 · 직접 정렬을 켜면 표지를 길게 눌러 이동할 수 있습니다.';
+    }
+    const mc=document.querySelector('#manualShelfControl');
+    if(mc)mc.classList.toggle('show',viewMode==='shelf');
+    const mt=document.querySelector('#manualShelfToggle');
+    if(mt){
+      mt.classList.toggle('on',manualShelf);
+      mt.setAttribute('aria-checked',manualShelf?'true':'false');
+    }
+    const ss=document.querySelector('#sortSelect');
+    if(ss){
+      ss.disabled=viewMode==='shelf'&&manualShelf;
+      if(!ss.disabled)ss.value=sortMode;
+    }
     const qAll=document.querySelector('#qAll'),qDone=document.querySelector('#qDone'),qReading=document.querySelector('#qReading'),qReread=document.querySelector('#qReread');
     if(qAll)qAll.textContent=books.length;
     if(qDone)qDone.textContent=books.filter(b=>b.status==='완독').length;
@@ -198,31 +244,69 @@
   };
   let shelfGesture=null;
 
+  function shelfPointFromTouch(e){
+    const t=e.touches?.[0]||e.changedTouches?.[0];
+    return t?{x:t.clientX,y:t.clientY,id:t.identifier}:null;
+  }
   function clearShelfTimer(){
     if(shelfGesture?.timer){clearTimeout(shelfGesture.timer);shelfGesture.timer=null}
   }
-
-  function endShelfDrag(saveOrder){
-    const s=shelfGesture;
-    if(!s)return;
+  function startShelfGesture(cover,card,grid,x,y,id,kind){
+    if(!manualShelf||viewMode!=='shelf')return;
+    shelfGesture={cover,card,grid,startX:x,startY:y,lastX:x,lastY:y,id,kind,active:false,timer:null,ghost:null,offsetX:0,offsetY:0};
+    shelfGesture.timer=setTimeout(()=>{
+      const s=shelfGesture;
+      if(!s||s.id!==id||s.kind!==kind||!manualShelf)return;
+      ensureShelfOrders();
+      s.active=true;
+      window.__mwlShelfSuppressClickUntil=Date.now()+1400;
+      const rect=s.cover.getBoundingClientRect();
+      s.offsetX=s.lastX-rect.left;s.offsetY=s.lastY-rect.top;
+      const ghost=s.cover.cloneNode(true);
+      ghost.classList.add('shelfDragGhost');
+      Object.assign(ghost.style,{left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px'});
+      document.body.appendChild(ghost);
+      s.ghost=ghost;
+      s.card.classList.add('shelfDragging');
+      document.body.classList.add('shelfReordering');
+      try{navigator.vibrate?.(35)}catch(_){}
+    },430);
+  }
+  function moveShelfGesture(x,y){
+    const s=shelfGesture;if(!s)return;
+    s.lastX=x;s.lastY=y;
+    const moved=Math.hypot(x-s.startX,y-s.startY);
+    if(!s.active){
+      // 작은 손떨림은 허용하고, 실제 스크롤 수준으로 움직였을 때만 길게누르기를 취소합니다.
+      if(moved>22){clearShelfTimer();shelfGesture=null}
+      return;
+    }
+    if(s.ghost){s.ghost.style.left=(x-s.offsetX)+'px';s.ghost.style.top=(y-s.offsetY)+'px'}
+    if(y<85)window.scrollBy(0,-14);
+    else if(y>window.innerHeight-95)window.scrollBy(0,14);
+    const hit=document.elementFromPoint(x,y);
+    const target=hit?.closest?.('#grid.shelfMode .card');
+    if(!target||target===s.card||target.parentElement!==s.grid)return;
+    const cards=[...s.grid.querySelectorAll('.card')];
+    const from=cards.indexOf(s.card),to=cards.indexOf(target);
+    if(from<0||to<0)return;
+    if(to<from)s.grid.insertBefore(s.card,target);
+    else s.grid.insertBefore(s.card,target.nextSibling);
+  }
+  function finishShelfGesture(saveOrder){
+    const s=shelfGesture;if(!s)return;
     clearShelfTimer();
-
     if(s.active){
-      window.__mwlShelfSuppressClickUntil=Date.now()+900;
+      window.__mwlShelfSuppressClickUntil=Date.now()+1000;
       document.body.classList.remove('shelfReordering');
       s.card?.classList.remove('shelfDragging');
       s.ghost?.remove();
-
-      if(saveOrder && s.grid){
+      if(saveOrder&&s.grid){
         ensureShelfOrders();
         const ids=[...s.grid.querySelectorAll('.card[data-book-id]')].map(x=>x.dataset.bookId).filter(Boolean);
         const visible=ids.map(id=>books.find(b=>String(b.id)===String(id))).filter(Boolean);
         const slots=visible.map(b=>Number(b.shelfOrder)).sort((a,b)=>a-b);
         visible.forEach((b,i)=>{b.shelfOrder=slots[i]});
-
-        sortMode='shelf';
-        localStorage.setItem(SORT_KEY,sortMode);
-        const sel=document.querySelector('#sortSelect');if(sel)sel.value='shelf';
         save();
         note('책장 순서를 저장했습니다');
       }
@@ -230,81 +314,46 @@
     shelfGesture=null;
   }
 
-  document.addEventListener('pointerdown',e=>{
-    if(viewMode!=='shelf'||e.button>0)return;
-    const cover=e.target.closest('#grid.shelfMode .card .cover');
-    if(!cover)return;
-    const card=cover.closest('.card'),grid=card?.parentElement;
-    if(!card||!grid)return;
+  // Android WebView에서는 touch 이벤트를 우선 사용합니다.
+  document.addEventListener('touchstart',e=>{
+    if(!manualShelf||viewMode!=='shelf'||e.touches.length!==1)return;
+    const cover=e.target.closest('#grid.shelfMode .card .cover');if(!cover)return;
+    const card=cover.closest('.card'),grid=card?.parentElement;if(!card||!grid)return;
+    const p=shelfPointFromTouch(e);if(!p)return;
+    startShelfGesture(cover,card,grid,p.x,p.y,p.id,'touch');
+  },{capture:true,passive:true});
 
-    shelfGesture={
-      pointerId:e.pointerId,cover,card,grid,
-      startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,
-      active:false,timer:null,ghost:null,offsetX:0,offsetY:0
-    };
-
-    shelfGesture.timer=setTimeout(()=>{
-      const s=shelfGesture;
-      if(!s||s.pointerId!==e.pointerId)return;
-      ensureShelfOrders();
-      s.active=true;
-      window.__mwlShelfSuppressClickUntil=Date.now()+1200;
-      try{s.cover.setPointerCapture(s.pointerId)}catch(_){}
-      const rect=s.cover.getBoundingClientRect();
-      s.offsetX=s.lastX-rect.left;
-      s.offsetY=s.lastY-rect.top;
-      const ghost=s.cover.cloneNode(true);
-      ghost.classList.add('shelfDragGhost');
-      Object.assign(ghost.style,{
-        left:rect.left+'px',top:rect.top+'px',
-        width:rect.width+'px',height:rect.height+'px'
-      });
-      document.body.appendChild(ghost);
-      s.ghost=ghost;
-      s.card.classList.add('shelfDragging');
-      document.body.classList.add('shelfReordering');
-      try{navigator.vibrate?.(28)}catch(_){}
-    },450);
-  },true);
-
-  document.addEventListener('pointermove',e=>{
-    const s=shelfGesture;
-    if(!s||s.pointerId!==e.pointerId)return;
-    s.lastX=e.clientX;s.lastY=e.clientY;
-    const moved=Math.hypot(e.clientX-s.startX,e.clientY-s.startY);
-    if(!s.active){
-      if(moved>9){clearShelfTimer();shelfGesture=null}
-      return;
-    }
-
-    if(e.cancelable)e.preventDefault();
-    if(s.ghost){
-      s.ghost.style.left=(e.clientX-s.offsetX)+'px';
-      s.ghost.style.top=(e.clientY-s.offsetY)+'px';
-    }
-
-    if(e.clientY<80)window.scrollBy(0,-12);
-    else if(e.clientY>window.innerHeight-90)window.scrollBy(0,12);
-
-    const hit=document.elementFromPoint(e.clientX,e.clientY);
-    const target=hit?.closest?.('#grid.shelfMode .card');
-    if(!target||target===s.card||target.parentElement!==s.grid)return;
-
-    const cards=[...s.grid.querySelectorAll('.card')];
-    const from=cards.indexOf(s.card),to=cards.indexOf(target);
-    if(from<0||to<0)return;
-    if(to<from)s.grid.insertBefore(s.card,target);
-    else s.grid.insertBefore(s.card,target.nextSibling);
+  document.addEventListener('touchmove',e=>{
+    const s=shelfGesture;if(!s||s.kind!=='touch')return;
+    const p=shelfPointFromTouch(e);if(!p)return;
+    if(s.active&&e.cancelable)e.preventDefault();
+    moveShelfGesture(p.x,p.y);
   },{capture:true,passive:false});
 
-  document.addEventListener('pointerup',e=>{
-    if(shelfGesture?.pointerId!==e.pointerId)return;
-    endShelfDrag(true);
+  document.addEventListener('touchend',e=>{
+    const s=shelfGesture;if(!s||s.kind!=='touch')return;
+    finishShelfGesture(true);
+  },true);
+  document.addEventListener('touchcancel',e=>{
+    const s=shelfGesture;if(!s||s.kind!=='touch')return;
+    finishShelfGesture(false);
   },true);
 
-  document.addEventListener('pointercancel',e=>{
-    if(shelfGesture?.pointerId!==e.pointerId)return;
-    endShelfDrag(false);
+  // PC/마우스도 동일하게 지원합니다.
+  document.addEventListener('mousedown',e=>{
+    if(!manualShelf||viewMode!=='shelf'||e.button!==0)return;
+    const cover=e.target.closest('#grid.shelfMode .card .cover');if(!cover)return;
+    const card=cover.closest('.card'),grid=card?.parentElement;if(!card||!grid)return;
+    startShelfGesture(cover,card,grid,e.clientX,e.clientY,'mouse','mouse');
+  },true);
+  document.addEventListener('mousemove',e=>{
+    const s=shelfGesture;if(!s||s.kind!=='mouse')return;
+    if(s.active&&e.cancelable)e.preventDefault();
+    moveShelfGesture(e.clientX,e.clientY);
+  },true);
+  document.addEventListener('mouseup',e=>{
+    const s=shelfGesture;if(!s||s.kind!=='mouse')return;
+    finishShelfGesture(true);
   },true);
 
   document.addEventListener('contextmenu',e=>{
