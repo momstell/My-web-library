@@ -69,10 +69,10 @@ jobs:
           count=$(unzip -Z1 "$apk" | grep -Ec '^assets/cover-art/[0-9]{2,3}\.webp$')
           test "$count" -eq 101
           aapt=$(find "$ANDROID_HOME/build-tools" -type f -name aapt -executable | sort -V | tail -n 1)
-          "$aapt" dump badging "$apk" | grep -F "package: name='com.momstell.myweblibrary.v521test'"
+          "$aapt" dump badging "$apk" | grep -F "package: name='com.momstell.myweblibrary.v522test'"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: cover-studio-v5.2.1-101-icon-test-debug
+          name: cover-studio-v5.2.2-launcher-icon-fix-debug
           path: android-wrapper/app/build/outputs/apk/debug/app-debug.apk
