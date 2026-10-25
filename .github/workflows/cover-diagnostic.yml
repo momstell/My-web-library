@@ -14,18 +14,28 @@ jobs:
           base="https://ncbdmzuwhphdstxcahxk.supabase.co/functions/v1/library-cover-resolver"
           novel="https://series.naver.com/novel/detail.series?productNo=14054024"
           u=base+"?"+urllib.parse.urlencode({"url":novel,"title":"친애하는 교수님께 [단행본]"})
-          with urllib.request.urlopen(u,timeout=35) as r:
-              data=json.load(r)
+          tests=[
+            ("adult","https://series.naver.com/novel/detail.series?productNo=14054024","친애하는 교수님께 [단행본]"),
+            ("general","https://series.naver.com/novel/detail.series?productNo=6135559","날 닮은 아이 [독점]"),
+          ]
           pathlib.Path("probe").mkdir(exist_ok=True)
-          src=data.get("coverDataUrl","")
-          if src.startswith("data:image/"):
-              prefix,payload=src.split(",",1)
-              ext="webp" if "webp" in prefix else ("png" if "png" in prefix else "jpg")
-              raw=base64.b64decode(payload)
-              pathlib.Path("probe/cover."+ext).write_bytes(raw)
-              print("actual_image_bytes=",len(raw),"candidate=",data.get("source",""),"score=",data.get("confidence",""))
-          else:
-              print("cover unavailable",str(data.get("error","")))
+          for label,novel,title in tests:
+              url=base+"?"+urllib.parse.urlencode({"url":novel,"title":title})
+              try:
+                  with urllib.request.urlopen(url,timeout=35) as response:
+                      data=json.load(response)
+              except Exception as err:
+                  print(label,"response_unavailable",str(err)[:100])
+                  continue
+              src=data.get("coverDataUrl","")
+              if src.startswith("data:image/"):
+                  prefix,payload=src.split(",",1)
+                  ext="webp" if "webp" in prefix else ("png" if "png" in prefix else "jpg")
+                  raw=base64.b64decode(payload)
+                  pathlib.Path("probe/"+label+"."+ext).write_bytes(raw)
+                  print(label,"image_bytes",len(raw),"source",data.get("source",""))
+              else:
+                  print(label,"no usable cover")
           PY
       - uses: actions/upload-artifact@v4
         with:
