@@ -43,6 +43,7 @@ jobs:
           node --check commercial-cover-studio.js
           count=$(find cover-art -maxdepth 1 -type f -name '*.webp' | wc -l)
           test "$count" -eq 101
+          unzip -Z1 "$apk" | grep -Fq "res/drawable-nodpi-v4/ic_launcher_studio.png"
 
       - name: Probe cover resolver (public test work)
         continue-on-error: true
@@ -68,11 +69,12 @@ jobs:
           apk=android-wrapper/app/build/outputs/apk/debug/app-debug.apk
           count=$(unzip -Z1 "$apk" | grep -Ec '^assets/cover-art/[0-9]{2,3}\.webp$')
           test "$count" -eq 101
+          unzip -Z1 "$apk" | grep -Fq "res/drawable-nodpi-v4/ic_launcher_studio.png"
           aapt=$(find "$ANDROID_HOME/build-tools" -type f -name aapt -executable | sort -V | tail -n 1)
-          "$aapt" dump badging "$apk" | grep -F "package: name='com.momstell.myweblibrary.v522test'"
+          "$aapt" dump badging "$apk" | grep -F "package: name='com.momstell.myweblibrary.v523test'"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: cover-studio-v5.2.2-launcher-icon-fix-debug
+          name: cover-studio-v5.2.3-launcher-icon-fix-debug
           path: android-wrapper/app/build/outputs/apk/debug/app-debug.apk

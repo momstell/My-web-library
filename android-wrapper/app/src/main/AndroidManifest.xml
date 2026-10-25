@@ -14,9 +14,9 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_library_launcher"
-        android:roundIcon="@drawable/ic_library_launcher"
-        android:label="표지스튜디오 v5.2.2 아이콘수정"
+        android:icon="@drawable/ic_launcher_studio"
+        android:roundIcon="@drawable/ic_launcher_studio"
+        android:label="표지스튜디오 v5.2.3 아이콘수정"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="false">
