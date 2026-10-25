@@ -1,0 +1,33 @@
+name: Cover Resolver Diagnostic
+on:
+  push:
+    paths:
+      - ".github/workflows/cover-diagnostic.yml"
+jobs:
+  cover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe public novel cover
+        run: |
+          python3 - <<'PY'
+          import json,base64,urllib.request,urllib.parse,pathlib
+          base="https://ncbdmzuwhphdstxcahxk.supabase.co/functions/v1/library-cover-resolver"
+          novel="https://series.naver.com/novel/detail.series?productNo=14054024"
+          u=base+"?"+urllib.parse.urlencode({"url":novel,"title":"친애하는 교수님께 [단행본]"})
+          with urllib.request.urlopen(u,timeout=35) as r:
+              data=json.load(r)
+          pathlib.Path("probe").mkdir(exist_ok=True)
+          src=data.get("coverDataUrl","")
+          if src.startswith("data:image/"):
+              prefix,payload=src.split(",",1)
+              ext="webp" if "webp" in prefix else ("png" if "png" in prefix else "jpg")
+              raw=base64.b64decode(payload)
+              pathlib.Path("probe/cover."+ext).write_bytes(raw)
+              print("actual_image_bytes=",len(raw),"candidate=",data.get("source",""),"score=",data.get("confidence",""))
+          else:
+              print("cover unavailable",str(data.get("error","")))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-cover-diagnostic
+          path: probe/
