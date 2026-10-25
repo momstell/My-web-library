@@ -15,7 +15,7 @@
   :root { --lib-accent:#7356ee;--lib-deep:#34224b;--lib-tint:#f2edff;--lib-line:#d9cafd; }
   html{min-height:100%;background:var(--v48bg)}
   body{min-height:100vh;color:#2b2834;background-color:var(--v48bg)!important;transition:background-color .2s ease}
-  .main{background:transparent!important;border-radius:0;min-height:75vh}
+  main.main{background:transparent!important;border-radius:0;min-height:75vh}
   .hero{background:linear-gradient(122deg,var(--lib-deep),var(--v48hero2))!important}
   .logo{flex-shrink:0;width:62px!important;height:62px!important;padding:3px!important;background:#fff!important;display:flex;align-items:center;justify-content:center;overflow:hidden!important;border-radius:20px!important}
   .logo img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important}
@@ -32,8 +32,14 @@
   .sortSelect:focus,.search:focus,.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--lib-accent)!important;box-shadow:0 0 0 3px var(--lib-tint);outline:0!important}
   .open{background:var(--lib-deep)!important}
   .mini,.ghost,.chip,.stat,.cloudbar,.card,.empty,.notice,.quickStat,.arrangeWrap{border-color:var(--lib-line)!important}
-  .cloudbar{background:var(--lib-tint)!important}
+  .cloudbar{background:var(--lib-tint)!important;min-height:0!important;height:auto!important;align-items:center!important}
+  #cloudActions{flex:0 0 auto;align-self:center!important}
+  #cloudActions .cloudbtn.main{min-height:0!important;max-height:40px!important;height:36px!important;max-width:none!important;min-width:65px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:7px 12px!important;line-height:1.2!important;border-radius:9px!important}
+  .cloudleft{flex:1 1 180px;min-width:0!important}
+  .cloudtxt{min-width:0!important}
+  .cloudsub{max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere}
   .cloudtitle,.notice b{color:var(--lib-deep)!important}
+  #cloudBar .cloudbtn:not(.main){background:#fff!important;color:var(--lib-deep)!important}
   .paletteBtn.on,.patternBtn.on{border-color:var(--lib-accent)!important;box-shadow:0 0 0 2px var(--lib-tint)!important}
   .shelfSwitch.on{background:var(--lib-accent)!important}
   #libShelfBar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:13px 0 9px}
@@ -78,7 +84,7 @@
     background-size:260px 240px,320px 270px,260px 250px,100% 100%!important;
   }
   body[data-mwl-pattern="none"]{background-image:none!important}
-  body[data-mwl-pattern]:not([data-mwl-pattern="none"]) .main{background:transparent!important}
+  body[data-mwl-pattern]:not([data-mwl-pattern="none"]) main.main{background:transparent!important}
   .patternBtn.pat-wood{background-size:220px 140px,100% 180px,100% 100%!important}
   .patternBtn.pat-marble,.patternBtn.pat-sea,.patternBtn.pat-woods{background-size:100% 100%!important}
   @media(max-width:520px){.logo{width:58px!important;height:58px!important;border-radius:19px!important}.brand{gap:9px!important}.brandText h1{font-size:23px!important}.themeButton{padding:7px 8px!important}.secretKicker{font-size:9px!important}#libShelfBar{gap:5px}#libShelfBar button{padding:7px 10px}#libShelfBar .libCategory{max-width:135px}}

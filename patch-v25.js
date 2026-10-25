@@ -68,14 +68,14 @@
       radial-gradient(circle at 20% 25%,#a8c98a 0 11%,transparent 12%),
       radial-gradient(circle at 70% 60%,#638f63 0 16%,transparent 17%),
       linear-gradient(135deg,#dcebd5,#7aa474)}
-    body[data-mwl-pattern="wood"] .main{background:repeating-linear-gradient(8deg,rgba(57,36,25,.13) 0 10px,rgba(86,56,39,.08) 10px 18px),var(--v48bg)}
-    body[data-mwl-pattern="marble"] .main{background:
+    body[data-mwl-pattern="wood"] main.main{background:repeating-linear-gradient(8deg,rgba(57,36,25,.13) 0 10px,rgba(86,56,39,.08) 10px 18px),var(--v48bg)}
+    body[data-mwl-pattern="marble"] main.main{background:
       linear-gradient(116deg,transparent 0 43%,rgba(150,155,170,.12) 44%,transparent 47%),
       linear-gradient(62deg,#fafafa,#eef0f3 45%,#fff 70%)}
-    body[data-mwl-pattern="sea"] .main{background:
+    body[data-mwl-pattern="sea"] main.main{background:
       radial-gradient(ellipse at 30% 12%,rgba(255,255,255,.75),transparent 27%),
       linear-gradient(180deg,#effbff,#dff4fa 45%,#edf9fb)}
-    body[data-mwl-pattern="woods"] .main{background:
+    body[data-mwl-pattern="woods"] main.main{background:
       radial-gradient(circle at 9% 8%,rgba(108,150,102,.12) 0 7%,transparent 8%),
       radial-gradient(circle at 88% 22%,rgba(71,123,82,.10) 0 9%,transparent 10%),
       linear-gradient(180deg,#f4faf4,#eaf4ea)}
