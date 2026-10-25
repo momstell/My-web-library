@@ -90,6 +90,23 @@
       setTimeout(()=>finish(false),6500);
     });
   }
+  // Clear the exact, independently verified generic 19+ image if it was auto-saved.
+  // Never modify a user-selected (coverManual) cover.
+  const knownGeneric=new Set();
+  async function purgeKnownPlaceholder(b){
+    if(!b||b.coverManual||knownGeneric.has(b.id)||!String(b.cover||"").startsWith("data:image/png;base64,"))return;
+    knownGeneric.add(b.id);
+    try{
+      const raw=atob(b.cover.slice(b.cover.indexOf(",")+1));
+      const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
+      const digest=await crypto.subtle.digest("SHA-256",bytes);
+      const sha=[...new Uint8Array(digest)].map(v=>v.toString(16).padStart(2,"0")).join("");
+      if(sha!=="c58276ebe70240949c3e523ee6502b86041093bd9a5b3186776d9f47522b2d49")return;
+      b.cover="";b.coverVerifiedAt="";
+      save();
+      note("잘못 저장된 연령 안내 이미지를 정리했습니다");
+    }catch{}
+  }
   const busy=new Set(),attempts=new Set();
   async function repair(b,loud=false){
     if(!b||busy.has(b.id)||b.coverManual&&!loud)return false;
@@ -142,8 +159,8 @@
         if(!image||bad(b.cover))fallback();
         else{
           image.style.display="";
-          if(image.complete&&image.naturalWidth&&looksPlaceholder(image))fallback();
-          else if(!image.complete)image.addEventListener("load",()=>{if(looksPlaceholder(image)){fallback();if(!b.coverManual)setTimeout(()=>repair(b,false),600)}},{once:true});
+          if(image.complete&&image.naturalWidth&&looksPlaceholder(image)){fallback();purgeKnownPlaceholder(b)}
+          else if(!image.complete)image.addEventListener("load",()=>{if(looksPlaceholder(image)){fallback();purgeKnownPlaceholder(b);if(!b.coverManual)setTimeout(()=>repair(b,false),600)}},{once:true});
         }
         if(!b.coverManual&&(!image||bad(b.cover)||cover.dataset.fallback==="yes")){
           const key=b.id+"|"+String(b.cover||"").slice(0,35);
