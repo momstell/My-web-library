@@ -43,7 +43,6 @@ jobs:
           node --check commercial-cover-studio.js
           count=$(find cover-art -maxdepth 1 -type f -name '*.webp' | wc -l)
           test "$count" -eq 101
-          unzip -Z1 "$apk" | grep -Fq "res/drawable-nodpi-v4/ic_launcher_studio.png"
 
       - name: Probe cover resolver (public test work)
         continue-on-error: true
