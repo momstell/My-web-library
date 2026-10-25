@@ -1,262 +1,166 @@
 (() => {
-  const PIN_KEY='mwl_secret_pin_hash_v1';
-  const PIN_SALT_KEY='mwl_secret_pin_salt_v1';
-  let secretMode=false;
-  let secretUnlocked=false;
+  const THEME_KEY='mwl_theme_v48';
+  const PATTERN_KEY='mwl_pattern_v48';
+  const COLORS={
+    violet:{name:'보라빛',a:'#6f55ff',b:'#a766ff',hero1:'#171a2a',hero2:'#362e70',bg:'#f5f6fb'},
+    berry:{name:'베리핑크',a:'#ff4f9a',b:'#b65cff',hero1:'#311426',hero2:'#5b2858',bg:'#fff6fb'},
+    mocha:{name:'모카',a:'#9a6b4d',b:'#c99b73',hero1:'#2b211d',hero2:'#5d4032',bg:'#faf6f1'},
+    ocean:{name:'오션',a:'#2f8cff',b:'#43c8d7',hero1:'#102638',hero2:'#174e6a',bg:'#f3fbff'},
+    forest:{name:'포레스트',a:'#3d936d',b:'#83b96b',hero1:'#17291f',hero2:'#315640',bg:'#f4faf5'},
+    midnight:{name:'미드나잇',a:'#4f56d9',b:'#8c6dff',hero1:'#10131d',hero2:'#24264c',bg:'#f4f5f9'}
+  };
+  const PATTERNS={
+    none:{name:'기본'},
+    wood:{name:'묵직한 우드'},
+    marble:{name:'깔끔한 대리석'},
+    sea:{name:'바다'},
+    woods:{name:'숲'}
+  };
+  let theme=localStorage.getItem(THEME_KEY)||'violet';
+  let pattern=localStorage.getItem(PATTERN_KEY)||'none';
 
   const style=document.createElement('style');
   style.textContent=`
-    .secretViewBtn{min-width:88px}
-    .secretViewBtn.on{background:#27213f!important;color:#fff!important;box-shadow:0 2px 7px rgba(39,33,63,.20)!important}
-    .secretShelfField{margin:12px 0 14px;padding:13px 14px;border:1px solid #eadffc;background:#faf8ff;border-radius:14px}
-    .secretShelfCheck{display:flex;align-items:center;gap:9px;font-weight:850;color:#3a334d;cursor:pointer}
-    .secretShelfCheck input{width:20px;height:20px;accent-color:#6756ef}
-    .secretShelfHelp{margin-top:6px;color:#9891a9;font-size:11px;line-height:1.4}
-    #secretPinDlg{border:0;border-radius:22px;padding:0;width:min(360px,88vw);box-shadow:0 24px 70px rgba(25,24,39,.28)}
-    #secretPinDlg::backdrop{background:rgba(18,19,29,.56);backdrop-filter:blur(3px)}
-    .secretPinBox{padding:24px}
-    .secretPinIcon{width:58px;height:58px;margin:0 auto 14px;border-radius:18px;background:linear-gradient(145deg,#7868ff,#543ee6);display:grid;place-items:center;font-size:28px;box-shadow:0 9px 22px rgba(98,78,235,.25)}
-    .secretPinBox h3{text-align:center;margin:0 0 7px;font-size:21px}
-    .secretPinDesc{text-align:center;color:#7f8390;font-size:12px;line-height:1.5;margin-bottom:17px}
-    #secretPinInput{width:100%;height:54px;border:1px solid #dfe1e8;border-radius:14px;text-align:center;font-size:25px;letter-spacing:12px;font-weight:900;outline:none;box-sizing:border-box}
-    #secretPinInput:focus{border-color:#7766f3;box-shadow:0 0 0 3px rgba(119,102,243,.12)}
-    .secretPinActions{display:flex;gap:9px;margin-top:14px}
-    .secretPinActions button{flex:1;height:44px;border:0;border-radius:12px;font-weight:850;font-size:14px}
-    #secretPinCancel{background:#eef0f5;color:#666b77}
-    #secretPinOk{background:#6654ee;color:#fff}
-    .secretPinError{height:18px;margin-top:8px;text-align:center;color:#d74d64;font-size:11px}
-    .secretModeBadge{display:none;margin-left:8px;padding:4px 8px;border-radius:999px;background:#eee9ff;color:#5d49df;font-size:10px;font-weight:850}
-    .secretModeBadge.show{display:inline-block}
+    :root{--v48a:#6f55ff;--v48b:#a766ff;--v48hero1:#171a2a;--v48hero2:#362e70;--v48bg:#f5f6fb}
+    body{background:var(--v48bg)!important}
+    .hero{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--v48hero1),var(--v48hero2))!important}
+    .hero:after{content:'';position:absolute;inset:0;pointer-events:none;opacity:.18;background:
+      radial-gradient(circle at 78% 12%,rgba(255,255,255,.55),transparent 24%),
+      radial-gradient(circle at 18% 92%,var(--v48b),transparent 34%)}
+    .hero .wrap{position:relative;z-index:1}
+    .brand{gap:13px!important}
+    .logo{width:56px!important;height:56px!important;border-radius:18px!important;padding:0!important;overflow:hidden!important;
+      background:#fff!important;box-shadow:0 9px 25px rgba(0,0,0,.20)!important}
+    .logo img{width:100%;height:100%;display:block;object-fit:cover}
+    .brandText h1,.brand h1{font-family:"Arial Rounded MT Bold","Trebuchet MS","Noto Sans KR",sans-serif!important;
+      font-weight:950!important;letter-spacing:-1.2px!important;font-size:27px!important}
+    .secretKicker{font-size:10px;font-weight:900;letter-spacing:.08em;color:#fff;opacity:.72;margin-bottom:2px}
+    .themeButton{margin-left:auto;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;
+      border-radius:999px;padding:8px 11px;font-size:11px;font-weight:900;backdrop-filter:blur(8px)}
+    .primary{background:linear-gradient(135deg,var(--v48a),var(--v48b))!important}
+    .chip.on,.quickStat.on{background:var(--v48hero1)!important;border-color:var(--v48hero1)!important}
+    .shelfSwitch.on{background:var(--v48a)!important}
+    .themeSheet{position:fixed;inset:0;z-index:999999;display:none;align-items:flex-end;background:rgba(12,14,22,.42)}
+    .themeSheet.show{display:flex}
+    .themePanel{width:min(720px,100%);max-height:82vh;overflow:auto;margin:0 auto;background:#fff;border-radius:24px 24px 0 0;
+      padding:18px 18px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -22px 70px rgba(0,0,0,.22)}
+    .themeHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .themeHead h3{margin:0;font-size:19px}
+    .themeClose{border:0;background:#f0f1f5;width:36px;height:36px;border-radius:50%;font-size:22px;color:#565b67}
+    .themeLabel{font-size:12px;font-weight:900;margin:20px 0 9px;color:#444956}
+    .paletteGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+    .paletteBtn{border:2px solid transparent;background:#f5f6f9;border-radius:15px;padding:8px;text-align:left;font-size:11px;font-weight:850;color:#555b67}
+    .paletteBtn.on{border-color:var(--v48a);box-shadow:0 0 0 3px color-mix(in srgb,var(--v48a) 12%,transparent)}
+    .swatch{height:38px;border-radius:10px;margin-bottom:6px}
+    .patternGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+    .patternBtn{height:68px;border:2px solid transparent;border-radius:15px;overflow:hidden;position:relative;background:#eee}
+    .patternBtn.on{border-color:var(--v48a)}
+    .patternBtn span{position:absolute;left:8px;bottom:7px;background:rgba(255,255,255,.86);color:#2c3039;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:900}
+    .pat-none{background:linear-gradient(135deg,#f7f7fb,#eceef6)}
+    .pat-wood{background:repeating-linear-gradient(8deg,#3c271c 0 12px,#533728 12px 18px,#2e1d16 18px 28px)}
+    .pat-marble{background:
+      linear-gradient(116deg,transparent 0 43%,rgba(150,155,170,.38) 44%,transparent 47%),
+      linear-gradient(62deg,#fafafa,#e9eaed 45%,#fff 70%)}
+    .pat-sea{background:
+      radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.65),transparent 28%),
+      repeating-radial-gradient(ellipse at 50% 120%,#45b7dd 0 12px,#2f8fc8 13px 20px,#72d5ec 21px 30px)}
+    .pat-woods{background:
+      radial-gradient(circle at 20% 25%,#a8c98a 0 11%,transparent 12%),
+      radial-gradient(circle at 70% 60%,#638f63 0 16%,transparent 17%),
+      linear-gradient(135deg,#dcebd5,#7aa474)}
+    body[data-mwl-pattern="wood"] .main{background:repeating-linear-gradient(8deg,rgba(57,36,25,.13) 0 10px,rgba(86,56,39,.08) 10px 18px),var(--v48bg)}
+    body[data-mwl-pattern="marble"] .main{background:
+      linear-gradient(116deg,transparent 0 43%,rgba(150,155,170,.12) 44%,transparent 47%),
+      linear-gradient(62deg,#fafafa,#eef0f3 45%,#fff 70%)}
+    body[data-mwl-pattern="sea"] .main{background:
+      radial-gradient(ellipse at 30% 12%,rgba(255,255,255,.75),transparent 27%),
+      linear-gradient(180deg,#effbff,#dff4fa 45%,#edf9fb)}
+    body[data-mwl-pattern="woods"] .main{background:
+      radial-gradient(circle at 9% 8%,rgba(108,150,102,.12) 0 7%,transparent 8%),
+      radial-gradient(circle at 88% 22%,rgba(71,123,82,.10) 0 9%,transparent 10%),
+      linear-gradient(180deg,#f4faf4,#eaf4ea)}
+    @media(max-width:520px){
+      .logo{width:50px!important;height:50px!important;border-radius:16px!important}
+      .brandText h1,.brand h1{font-size:23px!important}
+      .themeButton{padding:7px 9px}
+      .paletteGrid{grid-template-columns:repeat(3,1fr)}
+    }
   `;
   document.head.appendChild(style);
 
-  const toggle=document.querySelector('.viewToggle');
-  if(toggle && !document.querySelector('#secretViewBtn')){
-    const btn=document.createElement('button');
-    btn.type='button';
-    btn.className='viewBtn secretViewBtn';
-    btn.id='secretViewBtn';
-    btn.innerHTML='🔒 비밀서재';
-    toggle.appendChild(btn);
+  const brand=document.querySelector('.brand');
+  const logo=document.querySelector('.logo');
+  if(logo){
+    logo.textContent='';
+    const img=document.createElement('img');
+    img.src='./library-icon-cute.webp?v=48';
+    img.alt='';
+    logo.appendChild(img);
   }
-
-  const plats=document.querySelector('#plats');
-  if(plats && !document.querySelector('#secretShelfField')){
-    const wrap=document.createElement('div');
-    wrap.id='secretShelfField';
-    wrap.className='secretShelfField';
-    wrap.innerHTML=`
-      <label class="secretShelfCheck">
-        <input type="checkbox" id="secretShelfCheck">
-        <span>🔒 비밀서재에 보관</span>
-      </label>
-      <div class="secretShelfHelp">체크한 작품은 일반 리스트·책장·검색·통계에서 숨겨지고, PIN을 입력한 비밀서재에서만 보입니다.</div>
-    `;
-    plats.parentElement.insertBefore(wrap,plats);
-  }
-
-  const title=document.querySelector('.titlebar h2');
-  if(title && !document.querySelector('#secretModeBadge')){
-    const badge=document.createElement('span');
-    badge.id='secretModeBadge';
-    badge.className='secretModeBadge';
-    badge.textContent='PIN 보호';
-    title.insertAdjacentElement('afterend',badge);
-  }
-
-  if(!document.querySelector('#secretPinDlg')){
-    const d=document.createElement('dialog');
-    d.id='secretPinDlg';
-    d.innerHTML=`
-      <form method="dialog" id="secretPinForm" class="secretPinBox">
-        <div class="secretPinIcon">🔐</div>
-        <h3 id="secretPinTitle">비밀서재</h3>
-        <div class="secretPinDesc" id="secretPinDesc">4자리 PIN을 입력하세요.</div>
-        <input id="secretPinInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off">
-        <div class="secretPinError" id="secretPinError"></div>
-        <div class="secretPinActions">
-          <button type="button" id="secretPinCancel">취소</button>
-          <button type="submit" id="secretPinOk">확인</button>
-        </div>
-      </form>
-    `;
-    document.body.appendChild(d);
-  }
-
-  const pinDlg=document.querySelector('#secretPinDlg');
-  const pinInput=document.querySelector('#secretPinInput');
-  const pinTitle=document.querySelector('#secretPinTitle');
-  const pinDesc=document.querySelector('#secretPinDesc');
-  const pinError=document.querySelector('#secretPinError');
-  document.querySelector('#secretPinCancel')?.addEventListener('click',()=>pinDlg.close());
-
-  function bytesToB64(bytes){
-    let s='';
-    for(let i=0;i<bytes.length;i+=0x8000){
-      s+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
-    }
-    return btoa(s);
-  }
-  function b64ToBytes(v){
-    const s=atob(v),a=new Uint8Array(s.length);
-    for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);
-    return a;
-  }
-  async function derivePin(pin,salt){
-    const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveBits']);
-    const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:120000,hash:'SHA-256'},key,256);
-    return bytesToB64(new Uint8Array(bits));
-  }
-  async function savePin(pin){
-    const salt=crypto.getRandomValues(new Uint8Array(16));
-    const hash=await derivePin(pin,salt);
-    localStorage.setItem(PIN_SALT_KEY,bytesToB64(salt));
-    localStorage.setItem(PIN_KEY,hash);
-  }
-  async function verifyPin(pin){
-    const h=localStorage.getItem(PIN_KEY),s=localStorage.getItem(PIN_SALT_KEY);
-    if(!h||!s)return false;
-    return (await derivePin(pin,b64ToBytes(s)))===h;
-  }
-
-  function askPin(mode='unlock'){
-    return new Promise(resolve=>{
-      let first='';
-      pinInput.value='';
-      pinError.textContent='';
-      if(mode==='setup'){
-        pinTitle.textContent='비밀서재 PIN 설정';
-        pinDesc.textContent='사용할 숫자 4자리를 입력하세요. 한 번 더 확인합니다.';
-      }else{
-        pinTitle.textContent='비밀서재';
-        pinDesc.textContent='설정한 숫자 4자리 PIN을 입력하세요.';
+  if(brand){
+    const title=brand.querySelector('h1');
+    const holder=title?.parentElement;
+    if(holder){
+      holder.classList.add('brandText');
+      if(!holder.querySelector('.secretKicker')){
+        const k=document.createElement('div');
+        k.className='secretKicker';
+        k.textContent='PRIVATE LIBRARY · 비밀서재';
+        holder.insertBefore(k,title);
       }
-      const onClose=()=>{cleanup();resolve(false)};
-      const onSubmit=async e=>{
-        e.preventDefault();
-        const pin=pinInput.value.replace(/\D/g,'').slice(0,4);
-        if(pin.length!==4){pinError.textContent='숫자 4자리를 입력해 주세요.';return}
-        if(mode==='setup'){
-          if(!first){
-            first=pin;pinInput.value='';pinError.textContent='';
-            pinDesc.textContent='같은 PIN을 한 번 더 입력하세요.';
-            pinInput.focus();return;
-          }
-          if(first!==pin){
-            first='';pinInput.value='';pinError.textContent='PIN이 달라요. 처음부터 다시 입력해 주세요.';
-            pinDesc.textContent='사용할 숫자 4자리를 다시 입력하세요.';
-            return;
-          }
-          await savePin(pin);
-          cleanup();pinDlg.close();resolve(true);return;
-        }
-        if(await verifyPin(pin)){
-          cleanup();pinDlg.close();resolve(true);
-        }else{
-          pinInput.value='';pinError.textContent='PIN이 맞지 않습니다.';pinInput.focus();
-        }
-      };
-      const cleanup=()=>{
-        pinDlg.removeEventListener('close',onClose);
-        document.querySelector('#secretPinForm')?.removeEventListener('submit',onSubmit);
-      };
-      pinDlg.addEventListener('close',onClose,{once:true});
-      document.querySelector('#secretPinForm')?.addEventListener('submit',onSubmit);
-      pinDlg.showModal();
-      setTimeout(()=>pinInput.focus(),120);
-    });
+    }
+    if(!brand.querySelector('.themeButton')){
+      const b=document.createElement('button');
+      b.type='button';b.className='themeButton';b.textContent='🎨 꾸미기';
+      brand.appendChild(b);
+    }
   }
 
-  const listBeforeSecret=list;
-  list=function(){
-    const arr=listBeforeSecret();
-    return arr.filter(b=>secretMode ? !!b.secretShelf : !b.secretShelf);
-  };
+  const sheet=document.createElement('div');
+  sheet.className='themeSheet';
+  sheet.innerHTML=`
+    <section class="themePanel" role="dialog" aria-modal="true" aria-label="서재 꾸미기">
+      <div class="themeHead"><h3>내 서재 꾸미기</h3><button type="button" class="themeClose">×</button></div>
+      <div class="themeLabel">색 팔레트</div>
+      <div class="paletteGrid">
+        ${Object.entries(COLORS).map(([id,v])=>`<button type="button" class="paletteBtn" data-theme="${id}">
+          <div class="swatch" style="background:linear-gradient(135deg,${v.a},${v.b})"></div>${v.name}</button>`).join('')}
+      </div>
+      <div class="themeLabel">무늬 팔레트</div>
+      <div class="patternGrid">
+        ${Object.entries(PATTERNS).map(([id,v])=>`<button type="button" class="patternBtn pat-${id}" data-pattern="${id}"><span>${v.name}</span></button>`).join('')}
+      </div>
+    </section>`;
+  document.body.appendChild(sheet);
 
-  const renderBeforeSecret=render;
-  render=function(){
-    renderBeforeSecret();
-
-    const visible=books.filter(b=>secretMode ? !!b.secretShelf : !b.secretShelf);
-    const set=(id,val)=>{const el=document.querySelector(id);if(el)el.textContent=String(val)};
-    set('#nAll',visible.length);
-    set('#nRead',visible.filter(b=>b.status==='읽는 중').length);
-    set('#nDone',visible.filter(b=>b.status==='완독').length);
-    set('#nFull',visible.filter(b=>(b.platforms||[]).some(x=>x.ownership==='전권 소장')).length);
-    set('#qAll',visible.length);
-    set('#qDone',visible.filter(b=>b.status==='완독').length);
-    set('#qReading',visible.filter(b=>b.status==='읽는 중').length);
-    set('#qReread',visible.filter(b=>b.status==='완독'&&Number(b.rating||0)>=4).length);
-
-    const btn=document.querySelector('#secretViewBtn');
-    if(btn)btn.classList.toggle('on',secretMode);
-    document.querySelectorAll('.viewBtn[data-view]').forEach(x=>{
-      if(secretMode)x.classList.remove('on');
-    });
-    const h=document.querySelector('.titlebar h2');
-    if(h)h.textContent=secretMode?'비밀서재':'내 작품';
-    const badge=document.querySelector('#secretModeBadge');
-    if(badge)badge.classList.toggle('show',secretMode);
-    const search=document.querySelector('#search');
-    if(search)search.placeholder=secretMode?'비밀서재에서 검색하세요':'작품명 또는 작가를 검색하세요';
-  };
-
-  document.querySelector('#secretViewBtn')?.addEventListener('click',async()=>{
-    if(secretMode)return;
-    const configured=!!localStorage.getItem(PIN_KEY);
-    const ok=await askPin(configured?'unlock':'setup');
-    if(!ok)return;
-    secretUnlocked=true;
-    const listBtn=document.querySelector('.viewBtn[data-view="list"]');
-    if(listBtn)listBtn.click();
-    secretMode=true;
-    render();
-    note(configured?'비밀서재를 열었습니다':'PIN을 설정하고 비밀서재를 열었습니다');
-  });
-
-  document.addEventListener('click',e=>{
-    const normal=e.target.closest('.viewBtn[data-view="list"],.viewBtn[data-view="shelf"]');
-    if(!normal||!secretMode)return;
-    secretMode=false;
-    secretUnlocked=false;
-  },true);
-
-  const editBeforeSecret=window.edit;
-  window.edit=id=>{
-    editBeforeSecret(id);
-    const b=books.find(x=>String(x.id)===String(id));
-    const ck=document.querySelector('#secretShelfCheck');
-    if(ck)ck.checked=!!b?.secretShelf;
-  };
-
-  document.querySelector('#add')?.addEventListener('click',()=>{
-    const ck=document.querySelector('#secretShelfCheck');
-    if(ck)ck.checked=secretMode;
-  });
-
-  const form=document.querySelector('#form');
-  if(form){
-    form.addEventListener('submit',()=>{
-      const existingId=document.querySelector('#id')?.value||'';
-      const titleNow=document.querySelector('#title')?.value.trim()||'';
-      const authorNow=document.querySelector('#author')?.value.trim()||'';
-      const secret=!!document.querySelector('#secretShelfCheck')?.checked;
-      setTimeout(()=>{
-        let b=existingId?books.find(x=>String(x.id)===String(existingId)):null;
-        if(!b){
-          b=[...books]
-            .filter(x=>String(x.title||'').trim()===titleNow && String(x.author||'').trim()===authorNow)
-            .sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))[0];
-        }
-        if(!b)return;
-        if(!!b.secretShelf===secret)return;
-        b.secretShelf=secret;
-        b.updatedAt=new Date().toISOString();
-        save();
-        note(secret?'비밀서재에 보관했습니다':'일반 서재로 이동했습니다');
-      },0);
-    });
+  function apply(){
+    const t=COLORS[theme]||COLORS.violet;
+    const root=document.documentElement;
+    root.style.setProperty('--v48a',t.a);
+    root.style.setProperty('--v48b',t.b);
+    root.style.setProperty('--v48hero1',t.hero1);
+    root.style.setProperty('--v48hero2',t.hero2);
+    root.style.setProperty('--v48bg',t.bg);
+    root.style.setProperty('--p',t.a);
+    root.style.setProperty('--p2',t.b);
+    document.body.dataset.mwlPattern=pattern;
+    document.querySelectorAll('[data-theme]').forEach(x=>x.classList.toggle('on',x.dataset.theme===theme));
+    document.querySelectorAll('[data-pattern]').forEach(x=>x.classList.toggle('on',x.dataset.pattern===pattern));
+    const meta=document.querySelector('meta[name="theme-color"]');
+    if(meta)meta.setAttribute('content',t.hero1);
   }
+  apply();
 
-  render();
+  brand?.querySelector('.themeButton')?.addEventListener('click',()=>sheet.classList.add('show'));
+  sheet.querySelector('.themeClose')?.addEventListener('click',()=>sheet.classList.remove('show'));
+  sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.classList.remove('show')});
+  sheet.querySelectorAll('[data-theme]').forEach(btn=>btn.addEventListener('click',()=>{
+    theme=btn.dataset.theme;localStorage.setItem(THEME_KEY,theme);apply();
+  }));
+  sheet.querySelectorAll('[data-pattern]').forEach(btn=>btn.addEventListener('click',()=>{
+    pattern=btn.dataset.pattern;localStorage.setItem(PATTERN_KEY,pattern);apply();
+  }));
+
+  const foot=document.querySelector('.foot');
+  if(foot)foot.textContent='콘텐츠는 원 서비스에서 열립니다 · 비밀서재 v4.8';
 })();
