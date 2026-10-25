@@ -9,11 +9,11 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.momstell.myweblibrary.v51test"
+        applicationId = "com.momstell.myweblibrary.v511test"
         minSdk = 26
         targetSdk = 35
-        versionCode = 51
-        versionName = "5.1.0-test"
+        versionCode = 52
+        versionName = "5.1.1-test"
     }
 }
 android.sourceSets.getByName("main").assets.srcDir(commercialWebAssetsDir)
