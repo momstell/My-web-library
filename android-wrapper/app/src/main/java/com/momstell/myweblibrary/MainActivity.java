@@ -33,7 +33,7 @@ import org.json.JSONObject;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
-    private static final String LIBRARY_URL = "https://momstell.github.io/My-web-library/";
+    private static final String LIBRARY_URL = "https://momstell.github.io/My-web-library/commercial-preview.html";
 
     private static final String RIDI_PACKAGE = "com.initialcoms.ridi";
     private static final String SERIES_PACKAGE = "com.nhn.android.nbooks";

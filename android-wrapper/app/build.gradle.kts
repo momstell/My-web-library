@@ -7,10 +7,10 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.momstell.myweblibrary.v493test"
+        applicationId = "com.momstell.myweblibrary.v50commercialtest"
         minSdk = 26
         targetSdk = 35
-        versionCode = 22
-        versionName = "4.9.3"
+        versionCode = 1
+        versionName = "5.0.0-commercial-demo"
     }
 }

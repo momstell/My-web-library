@@ -12,6 +12,8 @@ on:
       - "patch-v28.js"
       - "patch-v29.js"
       - "patch-v11.js"
+      - "commercial-cover-studio.js"
+      - "commercial-preview.html"
       - "app-v20.html"
       - "sw.js"
       - "manifest.webmanifest"
@@ -37,6 +39,7 @@ jobs:
         run: |
           node --check patch-v11.js
           node --check patch-v29.js
+          node --check commercial-cover-studio.js
 
       - name: Probe cover resolver (public test work)
         continue-on-error: true
@@ -60,5 +63,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-web-library-v4.9.3-photo-picker-debug
+          name: my-web-library-v5.0-commercial-covers-debug
           path: android-wrapper/app/build/outputs/apk/debug/app-debug.apk
