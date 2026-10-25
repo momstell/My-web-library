@@ -12,6 +12,9 @@ on:
       - "patch-v28.js"
       - "patch-v29.js"
       - "patch-v11.js"
+      - "commercial-cover-studio.js"
+      - "commercial-preview.html"
+      - "cover-art/**"
       - "app-v20.html"
       - "sw.js"
       - "manifest.webmanifest"
@@ -37,6 +40,9 @@ jobs:
         run: |
           node --check patch-v11.js
           node --check patch-v29.js
+          node --check commercial-cover-studio.js
+          count=$(find cover-art -maxdepth 1 -type f -name '*.webp' | wc -l)
+          test "$count" -eq 50
 
       - name: Probe cover resolver (public test work)
         continue-on-error: true
@@ -57,8 +63,16 @@ jobs:
       - name: Build debug APK
         run: gradle -p android-wrapper assembleDebug
 
+      - name: Verify isolated package and bundled cover gallery
+        run: |
+          apk=android-wrapper/app/build/outputs/apk/debug/app-debug.apk
+          count=$(unzip -Z1 "$apk" | grep -Ec '^assets/cover-art/[0-9]{2}\.webp$')
+          test "$count" -eq 50
+          aapt=$(find "$ANDROID_HOME/build-tools" -type f -name aapt -executable | sort -V | tail -n 1)
+          "$aapt" dump badging "$apk" | grep -F "package: name='com.momstell.myweblibrary.v51test'"
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-web-library-v4.9.3-photo-picker-debug
+          name: cover-studio-v5.1-character-covers-debug
           path: android-wrapper/app/build/outputs/apk/debug/app-debug.apk

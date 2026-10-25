@@ -1,16 +1,22 @@
-# 내 소장도서관 Android v3.0
+# 내 소장도서관 v5.1 캐릭터 표지 테스트
 
-현재 GitHub Pages 서재를 그대로 사용하면서, 원 서비스 열기 버튼만 Android 네이티브 Intent로 처리하는 개인용 앱입니다.
+v5.1 테스트 APK는 v4.9.3과 다른 Android application ID(`com.momstell.myweblibrary.v51test`)를 사용하므로 두 앱을 함께 설치할 수 있습니다. 표지 스튜디오와 웹앱 파일은 APK 안에 담아 테스트 브랜치 버전으로 실행합니다.
 
-## 동작
-1. 작품 URL을 해당 플랫폼 앱에 직접 전달
-2. 작품 딥링크가 지원되지 않으면 해당 앱 자체 실행
-3. 앱이 설치되지 않았으면 Google Play 설치 페이지 이동
+## 빌드
 
-지원 패키지:
-- 리디: com.initialcoms.ridi
-- 네이버 시리즈: com.nhn.android.nbooks
-- 카카오페이지: com.kakao.page
-- 미스터블루: com.mrblue.mrblue
+```sh
+gradle -p android-wrapper assembleDebug
+```
 
-앱의 데이터와 로그인은 기존 웹앱/Supabase를 그대로 사용합니다.
+빌드 전 `preBuild` 작업이 루트의 앱 페이지, 패치 스크립트, 50개 표지 자산을 Android assets로 복사합니다. 테스트 APK는 GitHub Actions의 `cover-studio-v5.1-character-covers-debug` 아티팩트로 생성됩니다.
+
+## 표지 스튜디오
+
+- 실제 이미지가 들어간 WebP 캐릭터 표지 50종: 남자 20, 여자 15, 커플·가족 15
+- 핵심 추천 표지 12종 빠른 보기
+- 분위기와 장르·테마 필터
+- 내 이미지 등록 유지
+- 제목과 작가명을 합성한 미리보기 및 책장 저장
+- 샘플 작품 6권으로 첫 실행 화면 확인
+
+v4.9.3의 application ID와 소스 파일은 이 테스트 브랜치에서 변경하지 않습니다.

@@ -18,6 +18,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.ValueCallback;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import androidx.webkit.WebViewAssetLoader;
 import android.widget.Toast;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,7 +34,7 @@ import org.json.JSONObject;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
-    private static final String LIBRARY_URL = "https://momstell.github.io/My-web-library/";
+    private static final String LIBRARY_URL = "https://appassets.androidplatform.net/assets/commercial-preview.html";
 
     private static final String RIDI_PACKAGE = "com.initialcoms.ridi";
     private static final String SERIES_PACKAGE = "com.nhn.android.nbooks";
@@ -60,17 +61,26 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
+        s.setAllowFileAccess(false);
 
         s.setSupportMultipleWindows(false);
 
         final AndroidBridge bridge = new AndroidBridge(this);
+        final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .build();
         webView.addJavascriptInterface(bridge, "AndroidBridge");
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                return assetLoader.shouldInterceptRequest(request.getUrl());
+            }
+
             private boolean routeKnownService(String rawUrl) {
                 if (rawUrl == null || rawUrl.trim().isEmpty()) return false;
                 String low = rawUrl.toLowerCase(Locale.ROOT);
 
-                if (low.contains("momstell.github.io/my-web-library")) return false;
+                if (low.contains("appassets.androidplatform.net/assets/")) return false;
 
                 if (low.contains("naver.me") || low.contains("series.naver.com")) {
                     bridge.openPlatform("시리즈", rawUrl);
@@ -98,7 +108,7 @@ public class MainActivity extends Activity {
                 if (routeKnownService(raw)) return true;
 
                 String host = uri == null ? null : uri.getHost();
-                if ("momstell.github.io".equalsIgnoreCase(host)) return false;
+                if ("appassets.androidplatform.net".equalsIgnoreCase(host)) return false;
 
                 try {
                     startActivity(new Intent(Intent.ACTION_VIEW, uri));
@@ -112,7 +122,7 @@ public class MainActivity extends Activity {
                 if (routeKnownService(url)) return true;
                 Uri uri = Uri.parse(url);
                 String host = uri.getHost();
-                if ("momstell.github.io".equalsIgnoreCase(host)) return false;
+                if ("appassets.androidplatform.net".equalsIgnoreCase(host)) return false;
 
                 try {
                     startActivity(new Intent(Intent.ACTION_VIEW, uri));
