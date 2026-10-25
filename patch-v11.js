@@ -11,7 +11,7 @@
       <div id="coverPicker" class="coverPicker">
         <div class="coverPreview" id="coverPreview"><span>표지 없음</span></div>
         <div class="coverPickActions">
-          <label class="coverPickBtn">사진 선택<input id="coverFile" type="file" accept="image/*" hidden></label>
+          <button type="button" class="coverPickBtn" id="coverPickOpen">사진 선택</button><input id="coverFile" type="file" accept="image/*" hidden>
           <button type="button" class="coverRemoveBtn" id="coverRemove">표지 제거</button>
           <div class="coverHelp">휴대폰 사진을 선택하면 표지용 크기로 자동 압축해 저장합니다.</div>
         </div>
@@ -31,6 +31,10 @@
   document.head.appendChild(style);
 
   const fileInput = document.querySelector('#coverFile');
+  const photoButton = document.querySelector('#coverPickOpen');
+  // Trigger the browser-native file chooser synchronously from a real tap.
+  // Samsung WebView needs the Android WebChromeClient to handle this input.
+  if(photoButton && fileInput){photoButton.addEventListener('click',()=>fileInput.click())}
   const preview = document.querySelector('#coverPreview');
   const removeBtn = document.querySelector('#coverRemove');
 
@@ -76,7 +80,7 @@
     fileInput.addEventListener('change', async e=>{
       const file=e.target.files?.[0];
       if(!file)return;
-      if(!file.type.startsWith('image/')){note('이미지 파일을 선택해주세요');return}
+      if(file.type && !file.type.startsWith('image/') && !/\.(png|jpe?g|webp|gif|heic|heif)$/i.test(file.name||'')){note('이미지 파일을 선택해주세요');return}
       try{
         note('표지 사진을 준비하는 중…');
         const data=await compressCover(file);
