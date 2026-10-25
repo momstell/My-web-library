@@ -84,6 +84,8 @@
   @media(max-width:520px){.logo{width:58px!important;height:58px!important;border-radius:19px!important}.brand{gap:9px!important}.brandText h1{font-size:23px!important}.themeButton{padding:7px 8px!important}.secretKicker{font-size:9px!important}#libShelfBar{gap:5px}#libShelfBar button{padding:7px 10px}#libShelfBar .libCategory{max-width:135px}}
   `;
   document.head.appendChild(css);
+  const kicker=document.querySelector(".secretKicker");
+  if(kicker)kicker.textContent="PRIVATE LIBRARY · MY BOOKS";
   const img=document.querySelector(".logo img");
   if(img) {img.src="./library-icon-v48.webp?v=48b";img.alt="내 소장도서관 책 캐릭터";}
   let chosenShelf=localStorage.getItem("mwl_shelf_filter_v48")||"normal";

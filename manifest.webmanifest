@@ -1,6 +1,6 @@
 {
-  "name": "비밀서재",
-  "short_name": "비밀서재",
+  "name": "내 소장도서관",
+  "short_name": "내 소장도서관",
   "description": "리디, 시리즈, 카카오페이지, 미스터블루 웹툰·웹소설 통합 소장서재",
   "id": "./",
   "start_url": "./",
@@ -10,7 +10,7 @@
   "theme_color": "#171924",
   "lang": "ko-KR",
   "icons": [
-    {"src":"./library-icon-cute.webp","sizes":"256x256","type":"image/webp","purpose":"any maskable"}
+    {"src":"./library-icon-v48.webp","sizes":"224x224","type":"image/webp","purpose":"any maskable"}
   ],
   "share_target": {
     "action": "./",

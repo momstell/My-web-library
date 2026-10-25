@@ -7,6 +7,11 @@ on:
       - "android-wrapper/**"
       - "patch-v24.js"
       - "patch-v25.js"
+      - "patch-v26.js"
+      - "app-v20.html"
+      - "sw.js"
+      - "manifest.webmanifest"
+      - "library-icon-v48.webp"
       - ".github/workflows/android-apk.yml"
 
 jobs:
