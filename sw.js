@@ -1,4 +1,4 @@
-const CACHE='owned-library-v4.9.1';
+const CACHE='owned-library-v4.9.2';
 const CORE=['./','./index.html','./app-v20.html','./app.html','./patch-v08.js','./patch-v09.js','./patch-v10.js','./patch-v11.js','./patch-v20.js','./patch-v21.js','./patch-v22.js','./patch-v23.js','./patch-v24.js','./patch-v25.js','./patch-v26.js','./patch-v27.js','./patch-v28.js','./patch-v29.js','./library-icon-cute.webp','./library-icon-v48.webp','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

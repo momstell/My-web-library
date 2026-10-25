@@ -10,7 +10,7 @@ android {
         applicationId = "com.momstell.myweblibrary.v48test"
         minSdk = 26
         targetSdk = 35
-        versionCode = 20
-        versionName = "4.9.1"
+        versionCode = 21
+        versionName = "4.9.2"
     }
 }
