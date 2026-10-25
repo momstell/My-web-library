@@ -14,6 +14,8 @@ import android.webkit.JavascriptInterface;
 import android.webkit.CookieManager;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
+import android.webkit.WebChromeClient;
+import android.webkit.ValueCallback;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
@@ -43,6 +45,9 @@ public class MainActivity extends Activity {
     private static final String MRBLUE_PLUS_PACKAGE = "com.mrblue.mrblue_completion";
 
     private WebView webView;
+    // Android WebView does not open HTML <input type="file"> without a WebChromeClient.
+    private static final int COVER_FILE_PICKER_REQUEST = 4930;
+    private ValueCallback<Uri[]> pendingCoverFileCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,7 +131,65 @@ public class MainActivity extends Activity {
             }
         });
 
+        // Route the HTML cover input to Android's system image picker.
+        // This grants temporary read access to the selected Uri; no gallery/storage
+        // permissions, filesystem paths or changes to external deep links are required.
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView view,
+                                             ValueCallback<Uri[]> filePathCallback,
+                                             FileChooserParams fileChooserParams) {
+                if (pendingCoverFileCallback != null) {
+                    pendingCoverFileCallback.onReceiveValue(null);
+                }
+                pendingCoverFileCallback = filePathCallback;
+                Intent photoPicker = new Intent(Intent.ACTION_GET_CONTENT);
+                photoPicker.addCategory(Intent.CATEGORY_OPENABLE);
+                photoPicker.setType("image/*");
+                photoPicker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                if (fileChooserParams != null
+                        && fileChooserParams.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE) {
+                    photoPicker.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                }
+                try {
+                    startActivityForResult(Intent.createChooser(photoPicker, "표지 사진 선택"),
+                            COVER_FILE_PICKER_REQUEST);
+                    return true;
+                } catch (Exception e) {
+                    pendingCoverFileCallback = null;
+                    filePathCallback.onReceiveValue(null);
+                    Toast.makeText(MainActivity.this, "사진 선택 앱을 열 수 없습니다",
+                            Toast.LENGTH_SHORT).show();
+                    return true;
+                }
+            }
+        });
+
         webView.loadUrl(libraryUrlForIntent(getIntent()));
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != COVER_FILE_PICKER_REQUEST) return;
+        ValueCallback<Uri[]> callback = pendingCoverFileCallback;
+        pendingCoverFileCallback = null;
+        if (callback == null) return;
+        // Always finish the callback, including cancel: otherwise WebView can
+        // refuse to open the next file chooser.
+        Uri[] selected = null;
+        if (resultCode == RESULT_OK && data != null) {
+            if (data.getClipData() != null) {
+                int count = data.getClipData().getItemCount();
+                selected = new Uri[count];
+                for (int i = 0; i < count; i++) {
+                    selected[i] = data.getClipData().getItemAt(i).getUri();
+                }
+            } else if (data.getData() != null) {
+                selected = new Uri[] { data.getData() };
+            }
+        }
+        callback.onReceiveValue(selected);
     }
 
     @Override
