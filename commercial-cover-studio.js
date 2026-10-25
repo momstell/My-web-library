@@ -185,7 +185,7 @@ window.openCommercialCoverStudio=open;
 if(!books.length&&!localStorage.getItem("mwl_commercial_sample_seed")){
 const titles=["겨울 편지","은빛 정원","시계탑 아래","달의 도서관","검은 장미","파도 너머"];
 const now=new Date().toISOString();
-titles.forEach((title,i)=>books.push({id:"demo-"+(i+1),title,author:"샘플 작품",type:"웹소설",status:"안 읽음",rating:"",review:"",memo:"상업화 표지 체험용 가상 작품",cover:"",platforms:[],updatedAt:now}));
+titles.forEach((title,i)=>{const t=all[(i*7)%50];books.push({id:"demo-"+(i+1),title,author:"샘플 작품",type:"웹소설",status:"안 읽음",rating:"",review:"",memo:"상업화 표지 체험용 가상 작품",cover:dataUri(coverSVG(t,title,"샘플 작품")),coverManual:true,coverSource:"studio-template",coverTemplateId:t.id,platforms:[],updatedAt:now})});
 localStorage.setItem("mwl_commercial_sample_seed","1");save();render();
 }
 })();
