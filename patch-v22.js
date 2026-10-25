@@ -162,7 +162,7 @@
   if(sortSelect){
     sortSelect.value=sortMode;
     sortSelect.addEventListener('change',()=>{
-      if(arrangeMode==='manual') return;
+      if(manualShelf) return;
       sortMode=sortSelect.value;
       if(sortMode==='shelf') sortMode='recent';
       localStorage.setItem(SORT_KEY,sortMode);
@@ -227,7 +227,7 @@
     const grid=document.querySelector('#grid');
     if(grid){
       grid.classList.toggle('shelfMode',viewMode==='shelf');
-      grid.classList.toggle('manualArrange',viewMode==='shelf'&&arrangeMode==='manual');
+      grid.classList.toggle('manualArrange',viewMode==='shelf'&&manualShelf);
       const cards=[...grid.querySelectorAll('.card')];
       cards.forEach((card,i)=>{
         const b=arr[i];
@@ -306,7 +306,7 @@
   }
 
   function beginShelfGesture(cover,x,y,source,id){
-    if(viewMode!=='shelf'||arrangeMode!=='manual')return;
+    if(viewMode!=='shelf'||!manualShelf)return;
     const card=cover?.closest('.card'),grid=card?.parentElement;
     if(!card||!grid)return;
 
@@ -318,7 +318,7 @@
 
     shelfGesture.timer=setTimeout(()=>{
       const s=shelfGesture;
-      if(!s||s.source!==source||s.id!==id||arrangeMode!=='manual')return;
+      if(!s||s.source!==source||s.id!==id||!manualShelf)return;
       ensureShelfOrders();
       s.active=true;
       window.__mwlShelfSuppressClickUntil=Date.now()+1500;
@@ -374,7 +374,7 @@
 
   // Android/Samsung WebView에서는 touch 이벤트를 직접 사용합니다.
   document.addEventListener('touchstart',e=>{
-    if(viewMode!=='shelf'||arrangeMode!=='manual'||e.touches.length!==1)return;
+    if(viewMode!=='shelf'||!manualShelf||e.touches.length!==1)return;
     const cover=e.target.closest('#grid.shelfMode .card .cover');
     if(!cover)return;
     const t=e.changedTouches[0];
@@ -413,7 +413,7 @@
 
   // PC에서는 마우스를 길게 누른 뒤 드래그합니다.
   document.addEventListener('mousedown',e=>{
-    if(viewMode!=='shelf'||arrangeMode!=='manual'||e.button!==0)return;
+    if(viewMode!=='shelf'||!manualShelf||e.button!==0)return;
     const cover=e.target.closest('#grid.shelfMode .card .cover');
     if(!cover)return;
     beginShelfGesture(cover,e.clientX,e.clientY,'mouse',1);
@@ -440,7 +440,7 @@
   },true);
 
   document.addEventListener('contextmenu',e=>{
-    if(arrangeMode==='manual'&&e.target.closest('#grid.shelfMode .card .cover'))e.preventDefault();
+    if(manualShelf&&e.target.closest('#grid.shelfMode .card .cover'))e.preventDefault();
   },true);
 
   window.render=render;
