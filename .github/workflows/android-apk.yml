@@ -11,6 +11,8 @@ on:
       - "patch-v27.js"
       - "patch-v28.js"
       - "patch-v29.js"
+      - "patch-v30-kakao.js"
+      - "kakao-link-test.html"
       - "patch-v11.js"
       - "app-v20.html"
       - "commercial-cover-studio.js"
@@ -39,6 +41,7 @@ jobs:
         run: |
           node --check patch-v11.js
           node --check patch-v29.js
+          node --check patch-v30-kakao.js
           node --check sw.js
           node --check commercial-cover-studio.js
           count=$(find cover-art -maxdepth 1 -type f -name '*.webp' | wc -l)
@@ -67,5 +70,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-web-library-v4.9.3-photo-picker-debug
+          name: my-web-library-v4.9.4-kakao-test-debug
           path: android-wrapper/app/build/outputs/apk/debug/app-debug.apk
