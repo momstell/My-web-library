@@ -2,6 +2,7 @@
 "use strict";
 const sampleShare="https://link-page.kakao.com/open/content?utm_source=sh_clip&series_id=61577804";
 const sampleWork="https://page.kakao.com/content/61577804";
+const secondShare="https://link-page.kakao.com/open/content?utm_source=sh_clip&series_id=58137261";
 function isKakao(raw){
  try{const host=new URL(raw).hostname.toLowerCase();return host==="page.kakao.com"||host==="link-page.kakao.com"||host==="kko.to"||host==="www.page.kakao.com"}catch{return false;}
 }
@@ -10,7 +11,7 @@ function normalize(raw){
   const u=new URL(raw);
   if(!isKakao(raw))return "";
   const series=u.searchParams.get("series_id")||u.searchParams.get("seriesId");
-  const direct=u.pathname.match(/^\/(?:content|link)\/(\d{5,12})(?:\/|$)/);
+  const direct=u.pathname.match(/^\/(?:content|link)\/(\d{5,12})(?:\/|$)/) || u.pathname.match(/^\/home\/(?:[^/]+\/)?(\d{5,12})(?:\/|$)/);
   const id=(series&&/^\d{5,12}$/.test(series)?series:"")||(direct?.[1]||"");
   return id?"https://page.kakao.com/content/"+id:"";
  }catch{return "";}
@@ -74,11 +75,12 @@ const style=document.createElement("style");style.textContent=`
 #grid .kakaoAppTry{border:1px solid #e9d4a2;background:#fff8e6;color:#855b19}
 `;document.head.appendChild(style);
 const diag=document.createElement("section");diag.className="kakaoDiag";
-diag.innerHTML=`<strong>🟡 카카오페이지 작품 연결 테스트 v4.9.4</strong><p>공유받은 작품의 고유번호를 사용합니다. 작품 상세 웹페이지가 기본 연결이며, 앱 직접 연결은 별도로 실험할 수 있어요.</p><div class="kakaoBtns"><button type="button" class="kakaoMain" id="kakaoExactWeb">응급 맞선 작품 상세 열기</button><button type="button" id="kakaoExactApp">카카오 앱 연결 시도</button></div>`;
+diag.innerHTML=`<strong>🟡 카카오페이지 작품 연결 테스트 v4.9.4</strong><p>공유받은 작품의 고유번호를 사용합니다. 작품 상세 웹페이지가 기본 연결이며, 앱 직접 연결은 별도로 실험할 수 있어요.</p><div class="kakaoBtns"><button type="button" class="kakaoMain" id="kakaoExactWeb">응급 맞선 작품 상세 열기</button><button type="button" id="kakaoFalseWeb">거짓 부부 작품 상세 열기</button><button type="button" id="kakaoExactApp">카카오 앱 연결 시도</button></div>`;
 const main=document.querySelector("main.main")||document.querySelector(".main");
 if(main)main.insertAdjacentElement("afterbegin",diag);
 diag.querySelector("#kakaoExactWeb").onclick=()=>navigateWeb(sampleShare);
 diag.querySelector("#kakaoExactApp").onclick=()=>navigateApp(sampleShare);
+diag.querySelector("#kakaoFalseWeb").onclick=()=>navigateWeb(secondShare);
 // In the list view make the riskier app-link attempt explicitly opt-in.
 const previousRender=render;let rendering=false;
 render=function(){
