@@ -280,6 +280,79 @@ public class MainActivity extends Activity {
             this.pm = activity.getPackageManager();
         }
 
+        // KakaoPage stores the same work in several forms: its official share
+        // link uses series_id, its older product URL ends in /home/slug/id.
+        // Normalise both without rewriting saved data or another platform's URLs.
+        private String kakaoWorkId(String raw) {
+            if (raw == null || raw.isEmpty()) return "";
+            try {
+                Uri u = Uri.parse(raw);
+                String host = u.getHost();
+                if (host == null || !(host.equalsIgnoreCase("page.kakao.com")
+                        || host.equalsIgnoreCase("link-page.kakao.com")
+                        || host.equalsIgnoreCase("kko.to"))) return "";
+                String id = u.getQueryParameter("series_id");
+                if (id == null || !id.matches("[0-9]{5,12}")) id = u.getQueryParameter("seriesId");
+                if (id != null && id.matches("[0-9]{5,12}")) return id;
+                String path = u.getPath();
+                if (path != null) {
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                            "/(?:content/|home/(?:[^/]+/)?)([0-9]{5,12})(?:/|$)").matcher(path);
+                    if (m.find()) return m.group(1);
+                }
+            } catch (Exception ignored) {}
+            return "";
+        }
+
+        // Default: show the *specific work* in a browser, never launch
+        // the KakaoPage application HOME as fallback.
+        @JavascriptInterface
+        public void openKakaoWorkWeb(String raw) {
+            final String id = kakaoWorkId(raw);
+            activity.runOnUiThread(() -> {
+                if (id.isEmpty()) {
+                    Toast.makeText(activity, "카카오페이지 작품 번호를 찾지 못했습니다", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Uri dest = Uri.parse("https://page.kakao.com/content/" + id);
+                Intent browser = new Intent(Intent.ACTION_VIEW, dest);
+                browser.addCategory(Intent.CATEGORY_BROWSABLE);
+                browser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                for (String pkg : new String[]{"com.android.chrome","com.sec.android.app.sbrowser",
+                                              "org.mozilla.firefox","com.microsoft.emmx"}) {
+                    try {
+                        Intent directed = new Intent(browser);
+                        directed.setPackage(pkg);
+                        activity.startActivity(directed);
+                        return;
+                    } catch (Exception ignored) {}
+                }
+                try {
+                    activity.startActivity(Intent.createChooser(browser, "작품 상세를 열 브라우저 선택"));
+                } catch (Exception e) {
+                    Toast.makeText(activity, "웹 브라우저를 실행할 수 없습니다", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        // Optional test: ask the installed KakaoPage application to handle
+        // its official sharing URL. Never silently replace a rejected work
+        // deep link with the app launcher.
+        @JavascriptInterface
+        public void tryKakaoWorkApp(String raw) {
+            final String id = kakaoWorkId(raw);
+            activity.runOnUiThread(() -> {
+                if (id.isEmpty()) {
+                    Toast.makeText(activity, "카카오페이지 작품 번호를 찾지 못했습니다", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Uri share = Uri.parse("https://link-page.kakao.com/open/content?series_id=" + id);
+                if (tryOpenUriInPackage(share, KAKAO_PACKAGE)) return;
+                Toast.makeText(activity, "앱 직접 연결이 지원되지 않아 웹 상세로 엽니다", Toast.LENGTH_LONG).show();
+                openKakaoWorkWeb(share.toString());
+            });
+        }
+
         @JavascriptInterface
         public void openPlatformV2(String platform, String url, String title) {
             String p = platform == null ? "" : platform;
@@ -311,6 +384,12 @@ public class MainActivity extends Activity {
                     SeriesResolveResult result = resolveSeriesOnServer(u);
                     activity.runOnUiThread(() -> openSeriesResolved(result, u));
                 }).start();
+                return;
+            }
+
+            if (p.contains("카카오") || low.contains("page.kakao.com")
+                    || low.contains("link-page.kakao.com") || low.contains("kko.to")) {
+                openKakaoWorkWeb(u);
                 return;
             }
 
@@ -351,7 +430,11 @@ public class MainActivity extends Activity {
 
             String pkg = null;
             if (platform.contains("리디") || low.contains("ridi")) pkg = RIDI_PACKAGE;
-            else if (platform.contains("카카오") || low.contains("page.kakao") || low.contains("kakaopage") || low.contains("kko.to")) pkg = KAKAO_PACKAGE;
+            else if (platform.contains("카카오") || low.contains("page.kakao") || low.contains("kakaopage")
+                    || low.contains("link-page.kakao") || low.contains("kko.to")) {
+                openKakaoWorkWeb(url);
+                return;
+            }
 
             if (pkg != null) {
                 if (tryOpenUriInPackage(uri, pkg)) return;
